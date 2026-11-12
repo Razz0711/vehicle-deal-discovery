@@ -1,26 +1,98 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Design tokens. One dark "showroom at night" world; pale paper is used only
+   for the objects the customer acts on (selected cards, price sheets). */
+@theme {
+  --color-ink: #0b1530;
+  --color-ink-2: #111d3d;
+  --color-ink-3: #070e22;
+  --color-line: #263765;
+  --color-edge: #33456e;
+  --color-paper: #f3f5f9;
+  --color-mist: #a9b6ce;
+  --color-soft: #c9d4e8;
+  --color-blue: #2563eb;
+  --color-blue-deep: #1d4ed8;
+  --color-sky: #8fb4ff;
+  --color-warn: #ffb4a8;
+  --color-slate: #4a5873;
+
+  --font-display: "Archivo Variable", "Arial Narrow", sans-serif;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-ink);
+  color: #f3f6fb;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-stretch: 114%;
+  letter-spacing: -0.02em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.grid-floor {
+  background-image:
+    linear-gradient(#131f42 1px, transparent 1px),
+    linear-gradient(90deg, #131f42 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-sky);
+  outline-offset: 3px;
+}
+
+::placeholder {
+  color: #8a99b8;
+}
+
+@keyframes shimmer {
+  0% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}
+.skeleton {
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+dialog::backdrop {
+  background: rgba(7, 14, 34, 0.75);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .skeleton {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }

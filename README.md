@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vehicle deal-discovery journey
 
-## Getting Started
+A seven-step, multi-page flow: vehicle type → state → city → new or used →
+brand → model and variant → deals.
 
-First, run the development server:
+Built with Next.js (App Router), TypeScript, Tailwind CSS, Motion and Lucide
+icons. There is no backend.
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # production build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What is real and what is not
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Part | Status |
+|---|---|
+| Journey, routing, validation, search, compare, enquiry form | Working |
+| States and union territories | All 28 states and 8 UTs |
+| Cities | Starter list of major cities per region, not complete |
+| Brands, models, variants | Starter catalogue entered by hand, **not verified** |
+| Deals, sellers, prices | **Sample data only.** Fictional sellers, placeholder prices. See `src/data/sampleDeals.ts` |
+| Vehicle visuals | Real photographs only, registered in `src/data/vehiclePhotos.ts`. **None supplied yet**, so every slot shows a "Photograph to be added" frame. There are no illustrations, renders or generated images in the codebase |
+| Enquiry form | Demo mode: validates, then says nothing was saved or sent |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Where things live
 
-## Learn More
+```
+src/
+  app/                 one folder per step; each page is a server component
+    page.tsx           1 vehicle type      /
+    state/             2 state             /state
+    city/              3 city              /city
+    condition/         4 new or used       /condition
+    brand/             5 brand             /brand
+    model/             6 model + variant   /model
+    deals/             7 deals             /deals
+    template.tsx       page transition
+    loading.tsx        loading skeleton
+  components/
+    StepShell.tsx      header, progress, summary, back/next
+    SearchPicker.tsx   searchable option grid with empty state
+    steps/             CategoryPicker, ModelPicker, DealsView
+    vehicles/          VehiclePhoto (the only vehicle renderer), VehicleStage (animation)
+  data/                categories, catalog, locations, sampleDeals
+  lib/
+    selection.ts       selection state: parse, validate, URLs, steps
+    guard.ts           redirects to the first unanswered step
+    site.ts            brand name (change it here only)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## How selections persist
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Every choice is stored in the URL query string (`?v=cars&s=GJ&c=surat…`).
+A refresh, the back button or a shared link all restore the same state.
+Changing an earlier answer clears only the answers that depended on it.
+Opening a later step without the earlier answers redirects to the first
+unanswered step.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Replacing placeholders
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Photography:** put licensed photographs in `public/vehicles/` and register them in `src/data/vehiclePhotos.ts`. See `public/vehicles/README.md`.
+- **Real offers:** replace the `sampleDeals()` call in `src/app/deals/page.tsx`
+  with a data fetch that returns the same `Deal` shape, and set `isSample`
+  per listing.
+- **Brand name:** `src/lib/site.ts`.
