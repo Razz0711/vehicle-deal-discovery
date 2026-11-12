@@ -19,7 +19,7 @@
     "test:db:concurrency": "node scripts/db-concurrency.mjs",
     "test:db:generate": "node scripts/db-tests.mjs generate",
     "test:http": "node scripts/http-smoke.mjs",
-    "test:e2e:staging": "node scripts/e2e-auth-staging.mjs",
+    "test:e2e:staging:phone": "node scripts/e2e-auth-staging.mjs",
     "legal:hashes": "node scripts/legal-hashes.mjs"
   },
   "dependencies": {

@@ -120,3 +120,17 @@ The architecture requires `is_adult_declared`, and the existing form lacked it. 
 
 - **Limiter counters could exceed the limit.** Refused attempts still incremented the counter, so a CAPTCHA refund did not restore an attempt. Fixed by making each counter stop at its limit (`ON CONFLICT … DO UPDATE … WHERE count < limit`). Covered by the database tests and the concurrency test.
 - **Supabase requires an SMS provider even for test numbers.** The local `config.toml` enables Twilio with placeholder values. Staging needs the same in the dashboard (`docs/STAGING.md` step 2).
+
+## D3-13. Google sign-in replaces phone OTP for now (founder decision, 13 Nov 2026)
+
+**Why:** SMS costs money and needs DLT registration. The founder chose "sign in with Google directly" and asked to proceed. Phone OTP stays the long-term plan (architecture section 8.3) and returns when an SMS provider is funded.
+
+**What changes:**
+- Sign-in is Google OAuth with PKCE through `@supabase/ssr`. "Continue with Google" is a server action; `/auth/callback` exchanges the code for a cookie session and then sends the person to a safe `next` or to onboarding.
+- **Verified identity** for onboarding now means a confirmed phone **or** a confirmed email in `auth.users`. Google confirms the email.
+- The profile email defaults to the Google address and is marked verified only when it matches that confirmed address. A different address is stored unverified.
+- `profiles.mobile` is added as an optional, **unverified** number (founder had no preference; Claude's recommendation). It becomes verified once phone sign-in returns.
+- CAPTCHA does not apply to Google sign-in (Supabase checks CAPTCHA on code, password and sign-up requests, not on OAuth). Google's own abuse protection covers the provider step.
+- The phone UI, phone server actions and the Turnstile widget are removed from the app; they are in commit `241edbf`. The pure phone logic in `src/lib/auth/core.ts` stays, with its tests, for when phone returns. `private.rate_limits` and the limiter functions stay in the database unused.
+
+**Founder setup:** a Google Cloud OAuth client and the Google provider in Supabase (`docs/STAGING.md`, Google section).

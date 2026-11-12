@@ -31,6 +31,7 @@ create table if not exists auth.users (
   email text,
   phone text unique,
   phone_confirmed_at timestamptz,
+  email_confirmed_at timestamptz,
   is_anonymous boolean not null default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()

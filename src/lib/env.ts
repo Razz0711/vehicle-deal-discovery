@@ -16,7 +16,7 @@ export type PublicEnv = {
   appEnv: AppEnv;
   supabaseUrl: string;
   supabasePublishableKey: string;
-  /** Cloudflare Turnstile site key. Optional locally, where CAPTCHA is off. */
+  /** Cloudflare Turnstile site key. Used by phone sign-in, which is paused (D3-13), so optional. */
   turnstileSiteKey: string | null;
 };
 
@@ -86,10 +86,8 @@ export function parsePublicEnv(raw: RawPublicEnv): PublicEnv {
     );
   }
 
+  // Required again when phone sign-in returns: CAPTCHA protects code requests (D3-13).
   const turnstileSiteKey = raw.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || null;
-  if (appEnv !== "local" && !turnstileSiteKey) {
-    throw new EnvError("NEXT_PUBLIC_TURNSTILE_SITE_KEY is required on staging and production (CAPTCHA is mandatory).");
-  }
 
   return { appEnv, supabaseUrl: url.origin, supabasePublishableKey, turnstileSiteKey };
 }

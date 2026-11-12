@@ -142,10 +142,13 @@ export async function verifyOtpCore(deps: VerifyOtpDeps, input: { mobile: string
   const { error } = await deps.verify(toE164(ten), input.code);
   if (error) return { ok: false, reason: mapAuthError(error) };
   const profile = await deps.loadProfile();
-  if (profile?.onboarded) {
-    return { ok: true, onboarded: true, redirectTo: profile.status === "active" ? safeNext(input.next) : "/account" };
-  }
-  return { ok: true, onboarded: false, redirectTo: onboardingUrl(input.next) };
+  return { ok: true, onboarded: !!profile?.onboarded, redirectTo: afterSignIn(profile, input.next) };
+}
+
+/** Where to go once a sign-in succeeds (phone or Google): onward, onboarding, or the account page. */
+export function afterSignIn(profile: { onboarded: boolean; status: string } | null, next?: string): string {
+  if (profile?.onboarded) return profile.status === "active" ? safeNext(next) : "/account";
+  return onboardingUrl(next);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -160,9 +163,11 @@ export type OnboardingInput = {
   condition?: string;
   adult: boolean;
   consent: boolean;
+  /** Optional and unverified until phone sign-in returns (D3-13). */
+  mobile?: string;
 };
 
-export type ValidOnboarding = { name: string; email: string; state: string; city: string; condition: "new" | "used" | null };
+export type ValidOnboarding = { name: string; email: string; state: string; city: string; condition: "new" | "used" | null; mobile: string | null };
 
 export function validateOnboarding(input: OnboardingInput): { ok: true; value: ValidOnboarding } | { ok: false; fields: Record<string, string> } {
   const fields: Record<string, string> = {};
@@ -177,8 +182,11 @@ export function validateOnboarding(input: OnboardingInput): { ok: true; value: V
   if (input.condition && !condition) fields.condition = "Choose new, used or either.";
   if (input.adult !== true) fields.adult = "You must be 18 or older to create an account.";
   if (input.consent !== true) fields.consent = "Tick the box to agree before continuing.";
+  const mobileRaw = (input.mobile ?? "").trim();
+  const mobile = mobileRaw ? normaliseMobile(mobileRaw) : null;
+  if (mobileRaw && !mobile) fields.mobile = "Enter a 10-digit Indian mobile number, or leave it blank.";
   if (Object.keys(fields).length) return { ok: false, fields };
-  return { ok: true, value: { name, email, state: input.state, city: input.city, condition } };
+  return { ok: true, value: { name, email, state: input.state, city: input.city, condition, mobile } };
 }
 
 export type OnboardDeps = {
@@ -195,6 +203,7 @@ export type OnboardDeps = {
     p_terms_document_id: string;
     p_channel: "web";
     p_context: string;
+    p_mobile: string | null;
   }): Promise<{ error: DbError }>;
 };
 
@@ -215,6 +224,7 @@ export async function onboardCore(deps: OnboardDeps, input: OnboardingInput, con
     p_terms_document_id: docs.terms,
     p_channel: "web",
     p_context: context.slice(0, 60),
+    p_mobile: v.value.mobile,
   });
   if (!error) return { ok: true };
   if (error.code === "23505") {
@@ -227,6 +237,14 @@ export async function onboardCore(deps: OnboardDeps, input: OnboardingInput, con
 }
 
 /** Client address for per-IP limits. On Vercel, x-forwarded-for is set by the platform. */
+/** Builds the OAuth return address on this site, carrying only a safe `next`. */
+export function oauthCallbackUrl(siteOrigin: string, next?: string): string {
+  const target = next ? safeNext(next, "") : "";
+  const url = new URL("/auth/callback", siteOrigin);
+  if (target) url.searchParams.set("next", target);
+  return url.toString();
+}
+
 export function clientIpFrom(get: (name: string) => string | null): string {
   const real = get("x-real-ip")?.trim();
   const fwd = get("x-forwarded-for")?.split(",")[0]?.trim();

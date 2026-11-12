@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { clientIpFrom, mapAuthError, normaliseMobile, onboardCore, requestOtpCore, validateOnboarding, verifyOtpCore, type OnboardDeps, type RequestOtpDeps } from "./core.ts";
+import { afterSignIn, clientIpFrom, mapAuthError, oauthCallbackUrl, normaliseMobile, onboardCore, requestOtpCore, validateOnboarding, verifyOtpCore, type OnboardDeps, type RequestOtpDeps } from "./core.ts";
 
 // ---- fakes -------------------------------------------------------------------------------------
 function otpDeps(over: Partial<RequestOtpDeps> = {}) {
@@ -121,7 +121,7 @@ test("malformed codes are refused without calling Supabase", async () => {
 const good = { name: "  Asha   Patel ", email: "asha@example.com", state: "GJ", city: "Ahmedabad", adult: true, consent: true };
 
 test("server-side validation", () => {
-  assert.deepEqual(validateOnboarding(good), { ok: true, value: { name: "Asha Patel", email: "asha@example.com", state: "GJ", city: "Ahmedabad", condition: null } });
+  assert.deepEqual(validateOnboarding(good), { ok: true, value: { name: "Asha Patel", email: "asha@example.com", state: "GJ", city: "Ahmedabad", condition: null, mobile: null } });
   const bad = validateOnboarding({ name: "A", email: "nope", state: "XX", city: "Atlantis", adult: false, consent: false, condition: "vintage" });
   assert.equal(bad.ok, false);
   if (!bad.ok) assert.deepEqual(Object.keys(bad.fields).sort(), ["adult", "condition", "consent", "email", "name", "state"]);
@@ -143,7 +143,7 @@ function onboardDeps(over: Partial<OnboardDeps> = {}) {
 test("onboarding sends validated values and current document ids", async () => {
   const { deps, sent } = onboardDeps();
   assert.deepEqual(await onboardCore(deps, good, "register"), { ok: true });
-  assert.deepEqual(sent[0], { p_full_name: "Asha Patel", p_email: "asha@example.com", p_state_code: "GJ", p_city_name: "Ahmedabad", p_condition_pref: null, p_is_adult_declared: true, p_privacy_document_id: "p-id", p_terms_document_id: "t-id", p_channel: "web", p_context: "register" });
+  assert.deepEqual(sent[0], { p_full_name: "Asha Patel", p_email: "asha@example.com", p_state_code: "GJ", p_city_name: "Ahmedabad", p_condition_pref: null, p_is_adult_declared: true, p_privacy_document_id: "p-id", p_terms_document_id: "t-id", p_channel: "web", p_context: "register", p_mobile: null });
 });
 
 test("onboarding refusals", async () => {
@@ -164,4 +164,33 @@ test("client IP comes from platform headers, bounded in length", () => {
   assert.equal(clientIpFrom(h({ "x-forwarded-for": "198.51.100.1, 10.0.0.1" })), "198.51.100.1");
   assert.equal(clientIpFrom(h({})), "unknown");
   assert.equal(clientIpFrom(h({ "x-real-ip": "x".repeat(200) })).length, 64);
+});
+
+// ---- Google sign-in (D3-13) ------------------------------------------------------------------------
+test("optional mobile: blank is fine, valid is normalised, malformed is refused", () => {
+  const blank = validateOnboarding({ ...good, mobile: "  " });
+  assert.ok(blank.ok && blank.value.mobile === null);
+  const valid = validateOnboarding({ ...good, mobile: "+91 98765 43210" });
+  assert.ok(valid.ok && valid.value.mobile === "9876543210");
+  const bad = validateOnboarding({ ...good, mobile: "12345" });
+  assert.ok(!bad.ok && "mobile" in bad.fields);
+});
+
+test("onboarding passes the mobile through", async () => {
+  const { deps, sent } = onboardDeps();
+  await onboardCore(deps, { ...good, mobile: "9876543210" }, "onboarding");
+  assert.equal((sent[0] as { p_mobile: string }).p_mobile, "9876543210");
+});
+
+test("after sign-in: onward if registered, onboarding if new, account if suspended", () => {
+  assert.equal(afterSignIn({ onboarded: true, status: "active" }, "/deals?v=car"), "/deals?v=car");
+  assert.equal(afterSignIn({ onboarded: true, status: "active" }, "https://evil.example"), "/explore");
+  assert.equal(afterSignIn(null, "/deals"), "/onboarding?next=%2Fdeals");
+  assert.equal(afterSignIn({ onboarded: true, status: "suspended" }, "/deals"), "/account");
+});
+
+test("OAuth return address stays on this site and carries only a safe next", () => {
+  assert.equal(oauthCallbackUrl("http://localhost:3000", "/deals?v=car"), "http://localhost:3000/auth/callback?next=%2Fdeals%3Fv%3Dcar");
+  assert.equal(oauthCallbackUrl("https://preview.example.vercel.app"), "https://preview.example.vercel.app/auth/callback");
+  assert.equal(oauthCallbackUrl("http://localhost:3000", "https://evil.example"), "http://localhost:3000/auth/callback");
 });

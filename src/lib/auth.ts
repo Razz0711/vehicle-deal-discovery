@@ -1,12 +1,13 @@
 /**
  * AUTHENTICATION BOUNDARY (client-safe part).
  *
- * One account system for everyone: buyers, sellers and staff sign in the same way, with a
- * phone one-time code through Supabase Auth. What a person may do is decided on the server
+ * One account system for everyone: buyers, sellers and staff sign in the same way, with Google
+ * through Supabase Auth (decision D3-13; phone one-time codes return when SMS is funded). What a person may do is decided on the server
  * from database tables (profiles now; organisation membership and staff grants from Phase 6),
  * never from anything the browser sends.
  *
- * - Server actions: src/lib/auth-actions.ts (requestOtp, verifyOtp, completeOnboarding, signOut)
+ * - Server actions: src/lib/auth-actions.ts (signInWithGoogle, completeOnboarding, signOut)
+ * - OAuth return: src/app/auth/callback/route.ts
  * - Pure logic and messages: src/lib/auth/core.ts
  * - Route access rules: src/lib/auth/access.ts, enforced in pages via src/lib/auth/session.ts
  */

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Live sign-in tests against the STAGING Supabase project. NOT for production.
+ * PAUSED with phone sign-in (decision D3-13). Kept for when SMS returns.
+ * Live phone sign-in tests against the STAGING Supabase project. NOT for production.
  *   npm run test:e2e:staging
  *
  * Needs a machine that can reach *.supabase.co and these environment variables (.env.local):

@@ -12,17 +12,22 @@ export const USERS = {
   B: { id: "bbbbbbbb-0000-4000-8000-00000000000b", phone: "919000000102", session: "5e550000-0000-4000-8000-00000000000b" },
   ANON_USER: { id: "cccccccc-0000-4000-8000-00000000000c", phone: null, session: "5e550000-0000-4000-8000-00000000000c", anonymous: true },
   UNVERIFIED: { id: "dddddddd-0000-4000-8000-00000000000d", phone: "919000000104", session: "5e550000-0000-4000-8000-00000000000d", unconfirmed: true },
+  // Google sign-in (D3-13): confirmed email, no phone.
+  G1: { id: "eeeeeeee-0000-4000-8000-00000000000e", phone: null, email: "dftest.g1@example.com", session: "5e550000-0000-4000-8000-00000000000e" },
+  G2: { id: "ffffffff-0000-4000-8000-00000000000f", phone: null, email: "dftest.g2@example.com", session: "5e550000-0000-4000-8000-00000000000f" },
 };
 
 // Fixed hashes for the test-only document versions created inside the rolled-back transaction.
 const H = (c) => c.repeat(64);
 
 export const SETUP = `
-insert into auth.users (id, aud, role, phone, phone_confirmed_at, is_anonymous) values
-  ('${USERS.A.id}', 'authenticated', 'authenticated', '${USERS.A.phone}', now(), false),
-  ('${USERS.B.id}', 'authenticated', 'authenticated', '${USERS.B.phone}', now(), false),
-  ('${USERS.ANON_USER.id}', 'authenticated', 'authenticated', null, null, true),
-  ('${USERS.UNVERIFIED.id}', 'authenticated', 'authenticated', '${USERS.UNVERIFIED.phone}', null, false);
+insert into auth.users (id, aud, role, phone, phone_confirmed_at, email, email_confirmed_at, is_anonymous) values
+  ('${USERS.A.id}', 'authenticated', 'authenticated', '${USERS.A.phone}', now(), null, null, false),
+  ('${USERS.B.id}', 'authenticated', 'authenticated', '${USERS.B.phone}', now(), null, null, false),
+  ('${USERS.ANON_USER.id}', 'authenticated', 'authenticated', null, null, null, null, true),
+  ('${USERS.UNVERIFIED.id}', 'authenticated', 'authenticated', '${USERS.UNVERIFIED.phone}', null, 'dftest.unverified@example.com', null, false),
+  ('${USERS.G1.id}', 'authenticated', 'authenticated', null, null, '${USERS.G1.email}', now(), false),
+  ('${USERS.G2.id}', 'authenticated', 'authenticated', null, null, '${USERS.G2.email}', now(), false);
 -- Test document versions. "current" ones are the latest in effect; "old" and "future" are not current.
 insert into public.legal_documents (id, kind, version, effective_from, body_sha256, url) values
   ('10000000-0000-4000-8000-000000000001', 'privacy_notice', 'dftest-old',     now() - interval '2 days',   '${H("1")}', '/privacy'),
@@ -43,8 +48,8 @@ const PO = "'10000000-0000-4000-8000-000000000001'"; // old privacy
 const PF = "'10000000-0000-4000-8000-000000000003'"; // future privacy
 const T = "'20000000-0000-4000-8000-000000000002'"; // current terms
 const M = "'30000000-0000-4000-8000-000000000001'"; // marketing
-const onboard = (adult = "true", privacy = P, name = "Asha Patel", email = "asha@example.com") =>
-  `select public.complete_onboarding('${name}', '${email}', 'GJ', 'Ahmedabad', 'new', ${adult}, ${privacy}, ${T}, 'web', 'register')::text is not null`;
+const onboard = (adult = "true", privacy = P, name = "Asha Patel", email = "asha@example.com", mobile = "null") =>
+  `select public.complete_onboarding('${name}', '${email}', 'GJ', 'Ahmedabad', 'new', ${adult}, ${privacy}, ${T}, 'web', 'register', ${mobile})::text is not null`;
 
 export const CASES = [
   // --- signed-out visitors (anon) ---
@@ -80,7 +85,19 @@ export const CASES = [
   { name: "anonymous user cannot onboard", as: "ANON_USER", sql: onboard("true", P, "Anon", "anon@example.com"), expect: "error:42501" },
   { name: "anonymous user is not a registered buyer", as: "ANON_USER", sql: "select private.is_registered_buyer()::text", expect: "false" },
   { name: "anonymous user cannot add consent events", as: "ANON_USER", sql: `insert into public.consent_events (user_id, purpose, event, document_id, channel, context) values ('${USERS.ANON_USER.id}', 'terms', 'accepted', ${T}, 'web', 'x')`, expect: "error:42501" },
-  { name: "unverified phone cannot onboard", as: "UNVERIFIED", sql: onboard("true", P, "Unverified", "u@example.com"), expect: "error:42501" },
+  { name: "unverified identity (no confirmed phone or email) cannot onboard", as: "UNVERIFIED", sql: onboard("true", P, "Unverified", "u@example.com"), expect: "error:42501" },
+
+  // --- Google sign-in (D3-13) ---
+  { name: "Google user: onboarding with a malformed mobile is refused", as: "G1", sql: onboard("true", P, "Gita One", USERS.G1.email, "'12345'"), expect: "error:23514" },
+  { name: "Google user: onboarding with own Google email succeeds", as: "G1", sql: onboard("true", P, "Gita One", USERS.G1.email, "'9876543210'"), expect: "true" },
+  { name: "Google user: matching email is marked verified, mobile stored", as: "G1", sql: "select (email_verified_at is not null and mobile = '9876543210')::text from public.profiles", expect: "true" },
+  { name: "Google user: empty email defaults to the Google address", as: "G2", sql: onboard("true", P, "Gita Two", ""), expect: "true" },
+  { name: "Google user: defaulted address is the sign-in address and verified", as: "G2", sql: "select (email = '" + USERS.G2.email + "' and email_verified_at is not null and mobile is null)::text from public.profiles", expect: "true" },
+  { name: "Google user: changing email later clears verification", as: "G2", sql: `with u as (update public.profiles set email = 'other@example.com' where id = '${USERS.G2.id}' returning email_verified_at) select (email_verified_at is null)::text from u`, expect: "true" },
+  { name: "Google user: can add an unverified mobile later", as: "G2", sql: `with u as (update public.profiles set mobile = '9123456780' where id = '${USERS.G2.id}' returning mobile) select mobile from u`, expect: "9123456780" },
+  { name: "Google user: malformed mobile update refused", as: "G2", sql: `update public.profiles set mobile = '+91 91234' where id = '${USERS.G2.id}'`, expect: "error:23514" },
+  { name: "Google user: is a registered buyer", as: "G1", sql: "select private.is_registered_buyer()::text", expect: "true" },
+  { name: "Google user cannot see another Google user's profile", as: "G1", sql: `select count(*)::text from public.profiles where id = '${USERS.G2.id}'`, expect: "0" },
 
   // --- cross-user isolation: profiles ---
   { name: "A sees only their own profile", as: "A", sql: `select string_agg(id::text, ',') from public.profiles`, expect: USERS.A.id },
@@ -141,7 +158,7 @@ export const CASES = [
   { name: "anon can execute only the two limiter functions in public", as: "postgres", sql: "select coalesce(string_agg(p.proname, ',' order by p.proname), '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')", expect: "consume_otp_quota,refund_otp_quota" },
   { name: "API roles have no privileges on private tables", as: "postgres", sql: "select count(*)::text from pg_class c join pg_namespace n on n.oid = c.relnamespace, unnest(array['anon','authenticated','service_role']) r where n.nspname = 'private' and c.relkind = 'r' and (has_table_privilege(r, c.oid, 'select') or has_table_privilege(r, c.oid, 'insert') or has_table_privilege(r, c.oid, 'update') or has_table_privilege(r, c.oid, 'delete'))", expect: "0" },
   { name: "private security definer functions pin search_path", as: "postgres", sql: "select count(*)::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'private' and p.prosecdef and not coalesce(p.proconfig @> array['search_path=\"\"'], false)", expect: "0" },
-  { name: "authenticated may update only the five named profile columns", as: "postgres", sql: "select string_agg(attname, ',' order by attname) from pg_attribute where attrelid = 'public.profiles'::regclass and attnum > 0 and not attisdropped and has_column_privilege('authenticated', attrelid, attnum, 'update')", expect: "city_name,condition_pref,email,full_name,state_code" },
+  { name: "authenticated may update only the six named profile columns", as: "postgres", sql: "select string_agg(attname, ',' order by attname) from pg_attribute where attrelid = 'public.profiles'::regclass and attnum > 0 and not attisdropped and has_column_privilege('authenticated', attrelid, attnum, 'update')", expect: "city_name,condition_pref,email,full_name,mobile,state_code" },
   { name: "no API role has delete on any Phase 3 table", as: "postgres", sql: "select count(*)::text from unnest(array['public.profiles','public.legal_documents','public.consent_events']) t, unnest(array['anon','authenticated','service_role']) r where has_table_privilege(r, t::regclass, 'delete')", expect: "0" },
 ];
 
@@ -149,7 +166,7 @@ function claims(who) {
   if (who === "anon") return { role: "anon" };
   if (who === "service_role") return { role: "service_role" };
   const u = USERS[who];
-  return { sub: u.id, role: "authenticated", aud: "authenticated", is_anonymous: !!u.anonymous, session_id: u.session, aal: "aal1", phone: u.phone ?? "" };
+  return { sub: u.id, role: "authenticated", aud: "authenticated", is_anonymous: !!u.anonymous, session_id: u.session, aal: "aal1", phone: u.phone ?? "", email: u.email ?? "" };
 }
 
 const q = (s) => "$q$" + s + "$q$";

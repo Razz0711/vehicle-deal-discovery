@@ -10,10 +10,10 @@ import { completeOnboarding } from "@/lib/auth-actions";
 const SORTED = [...REGIONS].sort((a, b) => a.name.localeCompare(b.name));
 const field = "h-12 w-full rounded-xl bg-void px-4 text-base text-bright ring-1 ring-hairline-strong outline-none focus:ring-2 focus:ring-ember aria-[invalid=true]:ring-danger";
 
-/** Finishing an account whose number is verified but whose profile was never completed. */
-export function OnboardingForm({ next }: { next?: string }) {
+/** First sign-in: the details needed before offers can be shown. Prefilled from Google where possible. */
+export function OnboardingForm({ next, defaults }: { next?: string; defaults: { name: string; email: string } }) {
   const router = useRouter();
-  const [f, setF] = useState({ name: "", email: "", state: "", city: "", adult: false, consent: false });
+  const [f, setF] = useState({ name: defaults.name, email: defaults.email, mobile: "", state: "", city: "", adult: false, consent: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const region = SORTED.find((r) => r.code === f.state);
@@ -48,6 +48,13 @@ export function OnboardingForm({ next }: { next?: string }) {
         Email address
         <input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} autoComplete="email" aria-invalid={!!errors.email} className={field} />
         {err("email")}
+        {defaults.email && f.email.trim().toLowerCase() !== defaults.email.toLowerCase() && <span className="text-xs font-normal text-ash">A different address from your Google account is saved as unverified.</span>}
+      </label>
+      <label className="flex flex-col gap-1.5 text-sm font-medium">
+        Mobile number <span className="font-normal text-ash">(optional)</span>
+        <input value={f.mobile} onChange={(e) => setF({ ...f, mobile: e.target.value })} inputMode="tel" autoComplete="tel" placeholder="10-digit number" aria-invalid={!!errors.mobile} className={field} />
+        <span className="text-xs font-normal text-ash">Not verified yet. Shared with a seller only when you send that seller an enquiry.</span>
+        {err("mobile")}
       </label>
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm font-medium">

@@ -8,10 +8,11 @@ export const metadata: Metadata = { title: "Your account" };
 
 export default async function AccountPage() {
   const { session } = await guard("account", "/account");
-  const { state, phone, name } = session;
+  const { state, phone, email, name } = session;
   const profile = state.configured ? state.profile : null;
   return (
     <StatusPage eyebrow="Account" title={name ? `Signed in as ${name.split(" ")[0]}` : "Signed in"}>
+      {email && <p>Signed in with Google as {email}.</p>}
       {phone && <p>Mobile number ending {phone.slice(-4)}.</p>}
       {!profile?.onboarded && (
         <p>

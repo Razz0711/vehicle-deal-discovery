@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Lock, MapPin, UserCheck } from "lucide-react";
-import { RegisterFlow } from "@/components/account/RegisterFlow";
+import { GoogleSignIn } from "@/components/account/GoogleSignIn";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
 import { safeNext } from "@/lib/auth/redirect";
@@ -11,13 +11,15 @@ import { SITE } from "@/lib/site";
 export const metadata: Metadata = { title: "Get started", description: `Create a ${SITE.name} account to keep your location and preferences across visits.` };
 
 const POINTS = [
-  { Icon: UserCheck, title: "Only five details", text: "Name, mobile, email, state and city. No address, no documents, no date of birth." },
+  { Icon: UserCheck, title: "A few details, once", text: "Google confirms your email. You add your name, state and city; a mobile number is optional. No address, no documents, no date of birth." },
   { Icon: MapPin, title: "Your location does real work", text: "It decides which offers and which taxes apply, so you see prices for where you will buy." },
   { Icon: Lock, title: "Shared only when you ask", text: "A seller sees your details only if you send that seller an enquiry." },
 ];
 
-export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
-  const raw = (await searchParams).next;
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string | string[]; error?: string | string[] }> }) {
+  const sp = await searchParams;
+  const raw = sp.next;
+  const error = Array.isArray(sp.error) ? sp.error[0] : sp.error;
   const next = safeNext(Array.isArray(raw) ? raw[0] : raw, "") || undefined;
   const { state } = await readSession();
   if (state.configured && state.user && !state.user.anonymous) redirect(state.profile?.onboarded ? safeNext(next) : next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding");
@@ -44,7 +46,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
             ))}
           </ul>
         </div>
-        <RegisterFlow next={next} />
+        <div className="lg:pt-6"><GoogleSignIn next={next} error={error} intent="register" /></div>
       </main>
       <SiteFooter />
     </>

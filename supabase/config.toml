@@ -163,7 +163,7 @@ site_url = "http://localhost:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:3000", "http://127.0.0.1:3000"]
+additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://127.0.0.1:3000/auth/callback"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -264,8 +264,9 @@ otp_expiry = 3600
 # content_path = "./supabase/templates/password_changed_notification.html"
 
 [auth.sms]
-# DealFinder signs everyone in with a phone one-time code.
-enabled = true
+# Phone one-time codes are paused (decision D3-13): Google sign-in is used until SMS is funded.
+# Settings below are kept so phone sign-in can be switched back on by setting enabled = true.
+enabled = false
 enable_confirmations = true
 template = "Your DealFinder code is {{ .Code }}"
 # One code per number per minute, matching the hosted default.
@@ -298,7 +299,7 @@ max_frequency = "60s"
 # Supabase Auth needs an SMS provider configured even for test numbers. LOCAL STACK ONLY:
 # placeholder values, not credentials; nothing is sent to the fictional test numbers above.
 [auth.sms.twilio]
-enabled = true
+enabled = false
 account_sid = "local-placeholder"
 message_service_sid = "local-placeholder"
 # DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
@@ -331,6 +332,16 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack_oidc`, `spotify`, `workos`, `zoom`.
+# DealFinder sign-in (decision D3-13). Credentials come from a Google Cloud OAuth client and are
+# read from the environment; never write them here.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+
 [auth.external.apple]
 enabled = false
 client_id = ""

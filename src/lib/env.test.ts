@@ -50,8 +50,8 @@ test("requires https except for the local loopback stack", () => {
   assert.equal(local.turnstileSiteKey, null);
 });
 
-test("CAPTCHA site key is mandatory outside local", () => {
-  assert.throws(() => parsePublicEnv({ ...staging, NEXT_PUBLIC_TURNSTILE_SITE_KEY: "" }), /TURNSTILE/);
+test("CAPTCHA site key is optional while phone sign-in is paused (D3-13)", () => {
+  assert.equal(parsePublicEnv({ ...staging, NEXT_PUBLIC_TURNSTILE_SITE_KEY: "" }).turnstileSiteKey, null);
 });
 
 test("rejects unknown app environments", () => {

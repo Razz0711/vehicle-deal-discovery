@@ -35,6 +35,23 @@ Where values live:
 
 Note: with `NEXT_PUBLIC_APP_ENV=staging`, the app requires a Turnstile site key. Until step 3 below is done, auth code will report a clear configuration error rather than run without CAPTCHA.
 
+## Google sign-in setup for staging (founder) — current sign-in method (D3-13)
+
+Phone sign-in is paused, so steps 2, 3 and 4a below can wait. Do these instead:
+
+1. **Google Cloud Console** (console.cloud.google.com), using a project you own:
+   - **APIs & Services › OAuth consent screen:** User type **External**; app name "DealFinder (staging)"; your support email. Scopes: `openid`, `email`, `profile` only. While the app is in **Testing**, add your own Google accounts under **Test users** (only they can sign in).
+   - **APIs & Services › Credentials › Create credentials › OAuth client ID:** type **Web application**.
+     - Authorised JavaScript origins: `http://localhost:3000` (and your Vercel preview domain later).
+     - Authorised redirect URI: `https://rvcffforsepgrezvaxpm.supabase.co/auth/v1/callback`. This is Supabase's address, not the app's.
+   - Copy the **Client ID** and **Client secret**.
+2. **Supabase (staging) › Authentication › Sign In / Providers › Google:** enable, then paste the Client ID and Client secret yourself, and save. The secret never goes in this repository or in Vercel.
+3. **Supabase › Authentication › URL Configuration:**
+   - Site URL: `http://localhost:3000`.
+   - Redirect URLs: `http://localhost:3000/auth/callback` (and `https://*-<your-vercel-team>.vercel.app/auth/callback` for previews).
+4. **CAPTCHA:** Google sign-in does not use it. If CAPTCHA stays switched on, it must hold the correct Turnstile **secret** key (the one beginning `0x4AAAAAAF-qqO…`); otherwise turn it off until phone sign-in returns.
+5. `.env.local`: `SITE_URL=http://localhost:3000` (already set).
+
 ## One-time dashboard setup for staging (founder)
 
 The automation available to Claude cannot change Auth settings, so these are applied by hand in the staging project only. Each line matches `supabase/config.toml` or the approved architecture.
@@ -116,7 +133,7 @@ npm test               # unit tests (Node test runner)
 npm run test:db -- postgres://postgres@127.0.0.1:54322/postgres   # migrations + 81 security cases on a fresh local database
 npm run test:db:concurrency -- <same url>                          # limiter under real parallel connections
 npm run test:http -- http://localhost:3000                         # protected routes, redirects, forged cookies (against npm start)
-npm run test:e2e:staging                                           # live sign-in on staging (settings in the script header)
+npm run test:e2e:staging:phone                                     # live phone sign-in on staging (paused with phone, D3-13)
 npm run typecheck
 npm run lint
 npm run check:secrets  # Git-tracked and staged files, plus .next/static if built
