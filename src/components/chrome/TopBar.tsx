@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { Check, RotateCcw } from "lucide-react";
 import { STEPS, hrefFor, parseSelection } from "@/lib/selection";
@@ -28,8 +29,21 @@ export function TopBar() {
   const known = STEPS.some((s) => s.path === path);
   const fill = index / (STEPS.length - 1);
 
+  // Publish the bar's real height so sticky panels and scroll targets
+  // elsewhere sit exactly below it, whatever the screen size.
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty("--header-h", el.offsetHeight + "px");
+    set();
+    const observer = new ResizeObserver(set);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <header className="glass sticky top-0 z-30 border-b border-hairline">
+    <header ref={ref} className="bar sticky top-0 z-30 border-b border-hairline">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
         <Link href="/" className="display flex items-center gap-2.5 text-[17px] font-bold tracking-tight">
           <Logo />

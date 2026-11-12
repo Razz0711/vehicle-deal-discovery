@@ -92,7 +92,7 @@ export function SearchPicker({
                     <Link
                       href={item.href}
                       aria-current={item.selected ? "true" : undefined}
-                      className={`group flex min-h-16 items-center gap-4 rounded-2xl px-4 py-3.5 transition-[transform,background-color,box-shadow] duration-300 hover:-translate-y-0.5 ${
+                      className={`group flex h-full min-h-16 items-center gap-4 rounded-2xl px-4 py-3.5 transition-[transform,background-color,box-shadow] duration-300 hover:-translate-y-0.5 ${
                         item.selected ? "surface is-selected" : "surface hover:bg-graphite"
                       }`}
                     >
@@ -102,7 +102,7 @@ export function SearchPicker({
                         </span>
                       )}
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-semibold">{item.label}</span>
+                        <span className="block break-words font-semibold leading-snug">{item.label}</span>
                         {item.sub && <span className="block text-sm text-ash">{item.sub}</span>}
                       </span>
                       {item.selected ? (

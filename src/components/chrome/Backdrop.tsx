@@ -69,10 +69,6 @@ export function Backdrop() {
         className="absolute -inset-8 opacity-[0.55] [background-image:linear-gradient(rgb(255_255_255/0.035)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.035)_1px,transparent_1px)] [background-size:72px_72px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_35%,black,transparent)]"
       />
 
-      {/* Light streaks */}
-      <div className="streak absolute left-0 top-[28%] h-px w-[38vw] bg-gradient-to-r from-transparent via-ember/50 to-transparent" style={{ animationDelay: "1.5s" }} />
-      <div className="streak absolute left-0 top-[66%] h-px w-[30vw] bg-gradient-to-r from-transparent via-white/25 to-transparent" style={{ animationDelay: "6.5s", animationDuration: "14s" }} />
-
       <Particles disabled={!!reduce} />
 
       {/* Floor and vignette */}

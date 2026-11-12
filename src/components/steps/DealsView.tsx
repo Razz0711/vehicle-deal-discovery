@@ -3,29 +3,34 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, ChevronDown, FileText, Info, MapPin, Scale, SearchX, X } from "lucide-react";
+import { BadgeCheck, ChevronDown, FileText, FlaskConical, Info, MapPin, Scale, SearchX, X } from "lucide-react";
 import type { Deal, SellerType } from "@/data/sampleDeals";
-import { findPhoto, type PhotoKind } from "@/data/vehiclePhotos";
 import { formatINR } from "@/lib/slug";
-import { VehiclePhoto, hasPhoto } from "../vehicles/VehiclePhoto";
+import { VehiclePhoto, hasModelPhoto } from "../vehicles/VehiclePhoto";
 
-type Vehicle = { title: string; variant: string; place: string; kind: PhotoKind; modelKey?: string; condition: "new" | "used" };
+type Vehicle = { title: string; variant: string; place: string; modelKey: string; condition: "new" | "used" };
 
 const MAX_COMPARE = 3;
 const EASE = [0.2, 0.7, 0.2, 1] as const;
 const total = (d: Deal) => d.onRoad ?? d.price;
 const signed = (n: number) => (n < 0 ? "− " + formatINR(-n) : formatINR(n));
 
+/**
+ * How a price is evidenced. Sample listings only ever show "Sample". The
+ * other two labels exist for real offers and are never simulated.
+ */
+const BASIS = {
+  sample: { label: "Sample price", Icon: FlaskConical, tone: "bg-white/[0.06] text-fog", meaning: "Made-up figure for layout only. Not an offer." },
+  "seller-submitted": { label: "Seller-submitted", Icon: FileText, tone: "bg-white/[0.06] text-bright", meaning: "Quoted by the seller. Not yet checked by us." },
+  verified: { label: "Verified price", Icon: BadgeCheck, tone: "bg-verify/10 text-verify", meaning: "Backed by an invoice or booking record we have checked." },
+} as const;
+
 function Basis({ basis }: { basis: Deal["basis"] }) {
-  return basis === "verified" ? (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-verify/10 px-2.5 py-1 text-xs font-medium text-verify">
-      <BadgeCheck size={14} aria-hidden />
-      Verified price
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-fog">
-      <FileText size={14} aria-hidden />
-      Seller-submitted
+  const { label, Icon, tone } = BASIS[basis];
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
+      <Icon size={14} aria-hidden />
+      {label}
     </span>
   );
 }
@@ -79,7 +84,7 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
         </span>
         <p className="display mt-5 text-3xl font-bold">No offers here yet</p>
         <p className="mt-2 max-w-md text-fog">
-          We have no offers for the {vehicle.title} {vehicle.variant} in {vehicle.place}. Try a nearby city or another variant.
+          We have no listings for the {vehicle.title} {vehicle.variant} in {vehicle.place}. Try a nearby city or another variant.
         </p>
         <Link href={editHref} className="mt-6 flex min-h-12 items-center rounded-full bg-ember px-6 font-semibold text-void hover:bg-[#ff8a4a]">
           Change city
@@ -93,8 +98,7 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
   const spread = high - low;
   const compared = deals.filter((d) => compare.includes(d.id));
   const comparedLow = compared.length ? Math.min(...compared.map(total)) : 0;
-  const exactPhoto = findPhoto(vehicle.kind, vehicle.modelKey).exact;
-  const anyPhoto = hasPhoto(vehicle.kind, vehicle.modelKey);
+  const withPhoto = hasModelPhoto(vehicle.modelKey);
   const priceWord = deals[0].onRoad !== undefined ? "on-road price" : "asking price";
 
   const toggleCompare = (id: string) => setCompare((c) => (c.includes(id) ? c.filter((x) => x !== id) : c.length < MAX_COMPARE ? [...c, id] : c));
@@ -105,20 +109,34 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
       <div className="flex gap-3 rounded-2xl bg-ember-soft px-4 py-3.5 ring-1 ring-ember/30" role="note">
         <Info size={18} aria-hidden className="mt-0.5 flex-none text-ember" />
         <p className="text-sm text-bright/90">
-          <strong>Sample listings, not real offers.</strong> Sellers, prices and “verified” badges are placeholders.
-          <span className="hidden sm:inline"> This is how real offers will appear once sellers and price evidence are connected.</span>
+          <strong>Sample listings, not real offers.</strong> The sellers are fictional and the prices are made-up figures, not the price of this vehicle anywhere.
+          <span className="hidden sm:inline"> They show how offers will be compared once real sellers are connected.</span>
         </p>
       </div>
+
+      {/* A photograph only when it shows this exact model; otherwise the page heading stands alone. */}
+      {withPhoto && (
+        <figure className="surface m-0 grid overflow-hidden rounded-3xl sm:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+          <div className="relative h-40 overflow-hidden sm:h-full sm:min-h-40">
+            <VehiclePhoto modelKey={vehicle.modelKey} sizes="(min-width: 640px) 320px, 100vw" priority />
+          </div>
+          <figcaption className="flex min-w-0 flex-col justify-center gap-1.5 p-5 sm:p-6">
+            <span className="eyebrow text-ash">Reference photo</span>
+            <span className="display break-words text-2xl font-bold">{vehicle.title}</span>
+            <span className="text-sm text-fog">Shows the model, not a vehicle on offer. Real listings will carry the seller&rsquo;s own photographs.</span>
+          </figcaption>
+        </figure>
+      )}
 
       {/* At-a-glance price range */}
       <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE }} className="surface rounded-3xl p-4 sm:p-7" aria-label="Price range">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6">
           <div className="order-2 sm:order-1">
-            <p className="eyebrow text-ash">Offers</p>
+            <p className="eyebrow text-ash">Sample listings</p>
             <p className="display tnum mt-1 text-2xl font-extrabold sm:mt-2 sm:text-4xl">{deals.length}</p>
           </div>
           <div className="order-1 col-span-2 sm:order-2 sm:col-span-1">
-            <p className="eyebrow text-ash">Lowest {priceWord}</p>
+            <p className="eyebrow text-ash">Lowest sample {priceWord}</p>
             <p className="display tnum mt-1 text-4xl font-extrabold text-ember sm:mt-2">{formatINR(low)}</p>
           </div>
           <div className="order-3">
@@ -168,10 +186,19 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
           </select>
         </label>
       </div>
-      <p className="order-last text-xs text-ash sm:order-none sm:-mt-2">
-        <span className="text-verify">Verified</span> prices are backed by an invoice or booking record that has been checked. <span className="text-fog">Seller-submitted</span> prices are
-        quoted by the seller and not yet checked.
-      </p>
+      <dl className="order-last grid gap-2 text-xs sm:order-none sm:-mt-2 sm:grid-cols-3" aria-label="What the price labels mean">
+        {(Object.keys(BASIS) as Deal["basis"][]).map((key) => (
+          <div key={key} className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-hairline">
+            <dt>
+              <Basis basis={key} />
+            </dt>
+            <dd className="mt-2 text-ash">
+              {BASIS[key].meaning}
+              {key !== "sample" && " None on this page yet."}
+            </dd>
+          </div>
+        ))}
+      </dl>
 
       {/* Offers */}
       {shown.length === 0 ? (
@@ -200,44 +227,26 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
                   transition={{ delay: Math.min(i * 0.07, 0.3), duration: 0.6, ease: EASE }}
                   className={`group surface overflow-hidden rounded-3xl transition-shadow duration-500 ${selected ? "is-selected" : ""}`}
                 >
-                  <div className="grid lg:grid-cols-[300px_minmax(0,1fr)_280px]">
-                    <div className="relative h-40 overflow-hidden sm:h-48 lg:h-auto lg:min-h-56">
-                      <VehiclePhoto
-                        kind={vehicle.kind}
-                        modelKey={vehicle.modelKey}
-                        sizes="(min-width: 1024px) 300px, 100vw"
-                        showNote={false}
-                        className="transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-105"
-                      />
-                      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-coal/80 via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-coal/60" />
-                      <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-                        {isLow && <Chip tone="ember">Lowest price</Chip>}
-                        <Chip>Sample</Chip>
-                        {anyPhoto && !exactPhoto && <Chip>Representative photo</Chip>}
-                      </div>
-                    </div>
-
+                  <div className="grid lg:grid-cols-[minmax(0,1fr)_300px]">
                     <div className="flex min-w-0 flex-col gap-4 p-5 sm:p-6">
-                      <div>
-                        <h2 className="display text-2xl font-bold">{vehicle.title}</h2>
-                        <p className="mt-1 text-fog">
-                          {vehicle.variant}
-                          {deal.used ? ` · ${deal.used.year} · ${deal.used.km.toLocaleString("en-IN")} km · ${deal.used.owners === 1 ? "1st owner" : "2nd owner"}` : ""}
-                        </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {isLow && <Chip tone="ember">Lowest sample price</Chip>}
+                        <Basis basis={deal.basis} />
+                        {deal.availability && <span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-fog">{deal.availability}</span>}
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-                        <span>
-                          <span className="font-semibold">{deal.seller}</span>
-                          <span className="text-ash"> · {deal.sellerType}</span>
+                      <div className="min-w-0">
+                        <h3 className="display break-words text-2xl font-bold">{deal.seller}</h3>
+                        <p className="mt-1 text-fog">{deal.sellerType} · fictional seller</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-fog">
+                        <span className="break-words">
+                          {vehicle.title} {vehicle.variant}
+                          {deal.used ? ` · ${deal.used.year} · ${deal.used.km.toLocaleString("en-IN")} km · ${deal.used.owners === 1 ? "1st owner" : "2nd owner"}` : ""}
                         </span>
-                        <span className="flex items-center gap-1 text-fog">
+                        <span className="flex items-center gap-1">
                           <MapPin size={14} aria-hidden />
                           {vehicle.place}
                         </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Basis basis={deal.basis} />
-                        <span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-fog">{deal.availability}</span>
                       </div>
                       <button
                         type="button"
@@ -263,7 +272,7 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
                           <div className={`h-full rounded-full ${isLow ? "bg-ember" : "bg-fog/60"}`} style={{ width: pct + "%" }} />
                         </div>
                         <p className={`tnum mt-2 text-sm font-medium ${isLow ? "text-ember" : "text-fog"}`}>
-                          {isLow ? `Lowest of ${deals.length} offers` : `+ ${formatINR(total(deal) - low)} above the lowest`}
+                          {isLow ? `Lowest of ${deals.length} sample listings` : `+ ${formatINR(total(deal) - low)} above the lowest`}
                         </p>
                       </div>
                       <div className="flex gap-2.5">
@@ -317,7 +326,7 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
                     {compared.map((d) => (
                       <th key={d.id} className="p-3 text-right font-semibold">
                         {d.seller}
-                        <span className="block font-normal text-ash">{d.basis === "verified" ? "Verified price" : "Seller-submitted"}</span>
+                        <span className="block font-normal text-ash">{BASIS[d.basis].label}</span>
                       </th>
                     ))}
                   </tr>
@@ -367,7 +376,7 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 24 }}
-            className="glass sticky bottom-24 z-10 mx-auto flex w-full max-w-lg items-center justify-between gap-3 rounded-full py-2 pl-5 pr-2 shadow-2xl ring-1 ring-ember/50"
+            className="bar sticky bottom-24 z-10 mx-auto flex w-full max-w-lg items-center justify-between gap-3 rounded-full py-2 pl-5 pr-2 shadow-2xl ring-1 ring-ember/50"
           >
             <span className="text-sm">
               {compare.length} of {MAX_COMPARE} selected{compare.length < 2 ? " · add one more" : ""}

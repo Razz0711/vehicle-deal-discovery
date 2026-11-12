@@ -13,8 +13,8 @@ next time you run `npm run dev` or `npm run build` (or run `npm run photos`).
 | truck.jpg | a commercial vehicle | same, for commercial vehicles |
 
 Model-specific photographs: `models/<brand-id>/<model-id>.jpg`, for example
-`models/hyundai/creta.jpg`. Listings for that model then show it instead of the
-generic type photo and drop the "representative photo" label.
+`models/hyundai/creta.jpg`. The model step and the deals page then show it. A model
+without its own photograph shows none; a type photo is never used in its place.
 
 Specs: landscape, 3:2 or wider, at least 1600 px wide, vehicle roughly
 centred with some space around it. JPEG or WebP. Photographs are cropped to

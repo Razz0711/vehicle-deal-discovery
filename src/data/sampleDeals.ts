@@ -26,9 +26,13 @@ export type Deal = {
   priceLabel: string;
   onRoad?: number;
   breakdown: { label: string; amount: number }[];
-  availability: string;
-  /** How the price is evidenced. Sample listings only simulate this. */
-  basis: "verified" | "seller-submitted";
+  /** Stock status confirmed by the seller. Never set on sample listings. */
+  availability?: string;
+  /**
+   * How the price is evidenced. Sample listings are always "sample": the
+   * other two values are reserved for real offers and must never be simulated.
+   */
+  basis: "sample" | "seller-submitted" | "verified";
   used?: { year: number; km: number; owners: number };
 };
 
@@ -96,13 +100,12 @@ export function sampleDeals(input: {
         onRoad,
         breakdown: [
           { label: "Ex-showroom price", amount: ex },
-          { label: "RTO and registration", amount: rto },
+          { label: "RTO and registration (flat 9%, illustrative)", amount: rto },
           { label: "Insurance", amount: insurance },
           { label: "Accessories", amount: accessories },
           { label: "Seller discount", amount: -discount },
         ],
-        availability: rand() > 0.35 ? "In stock" : "On order",
-        basis: i % 2 === 0 ? ("verified" as const) : ("seller-submitted" as const),
+        basis: "sample" as const,
       };
     });
   }
@@ -114,7 +117,7 @@ export function sampleDeals(input: {
   ];
   return sellers.map(([seller, sellerType], i) => {
     const year = 2018 + Math.floor(rand() * 7);
-    const age = 2026 - year;
+    const age = Math.max(1, new Date().getFullYear() - year);
     const price = round(base * Math.max(0.35, 0.85 - age * 0.07 - rand() * 0.05), step);
     return {
       id: "used-" + i,
@@ -124,8 +127,7 @@ export function sampleDeals(input: {
       price,
       priceLabel: "Asking price",
       breakdown: [{ label: "Asking price", amount: price }],
-      availability: "Available",
-      basis: sellerType === "Certified pre-owned" ? ("verified" as const) : ("seller-submitted" as const),
+      basis: "sample" as const,
       used: {
         year,
         km: round(age * (6000 + rand() * 9000) + 3000, 500),

@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full">
         <Providers>
           <Backdrop />
-          <Suspense fallback={<div className="h-[104px]" />}>
+          <Suspense fallback={<div className="h-[var(--header-h)]" />}>
             <TopBar />
           </Suspense>
           {children}

@@ -1,16 +1,26 @@
 import generated from "./photos.generated.json";
-import { REMOTE_PHOTOS, commonsThumb, type RemotePhoto } from "./remotePhotos";
+import { ALL_REMOTE_PHOTOS, REMOTE_PHOTOS, commonsThumb, type RemotePhoto } from "./remotePhotos";
 
 /**
- * VEHICLE PHOTOGRAPHS
+ * VEHICLE PHOTO LIBRARY — the single place that decides which photograph,
+ * if any, may be shown.
  *
- * Every vehicle on screen is a real photograph. There are no illustrations,
- * renders or generated vehicle images in the codebase. Sources, in order:
+ * Two questions, two functions, and no fallback between them:
  *
- * 1. Your own files in /public/vehicles (registered by scripts/scan-photos.mjs;
- *    see the README in that folder). Model-specific files win over type files.
- * 2. Licensed photographs from Wikimedia Commons (data/remotePhotos.ts).
- * 3. Nothing: the slot shows an empty lit frame, never an artificial vehicle.
+ *   typePhoto(kind)       "what does this kind of vehicle look like?"
+ *                         Used only where the customer is choosing a vehicle
+ *                         type (step 1).
+ *
+ *   modelPhoto(modelKey)  "what does this exact model look like?"
+ *                         Used on the model step and on deal listings. Returns
+ *                         a photograph only if it depicts that model. It never
+ *                         falls back to a type photo, so a hatchback can never
+ *                         appear beside a different car.
+ *
+ * Sources, in priority order: your own files in /public/vehicles (registered
+ * by scripts/scan-photos.mjs), then licensed Wikimedia Commons photographs
+ * (data/remotePhotos.ts). All are real photographs; there are no
+ * illustrations, renders or generated images.
  */
 
 export type PhotoKind = "car" | "bike" | "scooter" | "ev" | "ev-scooter" | "truck";
@@ -34,19 +44,24 @@ export const PHOTO_SLOTS: Record<PhotoKind, { file: string; shows: string }> = {
   truck: { file: "truck.jpg", shows: "a commercial vehicle" },
 };
 
-const KINDS = generated.kinds as Partial<Record<PhotoKind, VehiclePhoto>>;
-const MODELS = generated.models as Record<string, VehiclePhoto>;
+const LOCAL_TYPES = generated.kinds as Partial<Record<PhotoKind, VehiclePhoto>>;
+const LOCAL_MODELS = generated.models as Record<string, VehiclePhoto>;
 
-export function findPhoto(kind: PhotoKind, modelKey?: string): { photo?: VehiclePhoto; exact: boolean } {
-  const exact = modelKey ? MODELS[modelKey] : undefined;
-  if (exact) return { photo: exact, exact: true };
-  if (KINDS[kind]) return { photo: KINDS[kind], exact: false };
+function fromRemote(remote: RemotePhoto): VehiclePhoto {
+  return { src: commonsThumb(remote, 1280), alt: remote.alt, credit: remote.author, focus: remote.focus ?? "50% 58%", remote };
+}
+
+/** A photograph representing a vehicle type. Step 1 only. */
+export function typePhoto(kind: PhotoKind): VehiclePhoto | undefined {
+  if (LOCAL_TYPES[kind]) return LOCAL_TYPES[kind];
   const remote = REMOTE_PHOTOS[kind];
-  if (remote) {
-    return {
-      photo: { src: commonsThumb(remote, 1280), alt: remote.alt, credit: remote.author, focus: remote.focus ?? "50% 58%", remote },
-      exact: false,
-    };
-  }
-  return { photo: undefined, exact: false };
+  return remote ? fromRemote(remote) : undefined;
+}
+
+/** A photograph of exactly this model ("<brand-id>/<model-id>"), or nothing. */
+export function modelPhoto(modelKey: string | undefined): VehiclePhoto | undefined {
+  if (!modelKey) return undefined;
+  if (LOCAL_MODELS[modelKey]) return LOCAL_MODELS[modelKey];
+  const remote = ALL_REMOTE_PHOTOS.find((p) => p.models.includes(modelKey));
+  return remote ? fromRemote(remote) : undefined;
 }

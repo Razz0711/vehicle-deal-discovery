@@ -76,7 +76,11 @@ export function CategoryPicker({ sel }: { sel: Selection }) {
         })}
       </ul>
       <p className="mt-5 text-sm text-ash" aria-live="polite">
-        {pickedCat ? `${pickedCat.label} selected. Loading states…` : "Choose a vehicle type to begin."}
+        {pickedCat
+          ? `${pickedCat.label} selected. Loading states…`
+          : sel.brand
+            ? "Changing the vehicle type clears the brand and model you chose."
+            : "Choose a vehicle type to begin."}
       </p>
 
       <AnimatePresence>

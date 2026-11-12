@@ -31,6 +31,12 @@ html {
   color-scheme: dark;
   scroll-behavior: smooth;
   background: var(--color-void);
+  /* Height of the sticky top bar. TopBar.tsx keeps this in step with the
+     real element; every sticky offset and scroll target is derived from it. */
+  --header-h: 130px;
+  /* Anything scrolled or tabbed into view lands clear of both bars. */
+  scroll-padding-top: calc(var(--header-h) + 1rem);
+  scroll-padding-bottom: 6rem;
 }
 
 body {
@@ -70,10 +76,10 @@ body {
     0 20px 40px -24px rgb(0 0 0 / 0.8);
 }
 
-.glass {
-  background: rgb(17 17 19 / 0.62);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+/* Top bar, bottom bar and compare tray. Solid, so page content scrolling
+   behind them never shows through. */
+.bar {
+  background: #0c0c0e;
 }
 
 /* Selected state: ember ring with a soft bloom. */
@@ -106,15 +112,8 @@ body {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
   50% { transform: translate3d(-5vw, -6vh, 0) scale(0.95); }
 }
-@keyframes streak {
-  0% { transform: translate3d(-40vw, 0, 0) rotate(-18deg); opacity: 0; }
-  12% { opacity: 1; }
-  60% { opacity: 1; }
-  100% { transform: translate3d(140vw, 0, 0) rotate(-18deg); opacity: 0; }
-}
 .drift-a { animation: drift-a 26s ease-in-out infinite; }
 .drift-b { animation: drift-b 32s ease-in-out infinite; }
-.streak { animation: streak 11s var(--ease-out-soft) infinite; }
 
 /* ---------- Content entrance ---------- */
 @keyframes rise {
@@ -161,9 +160,8 @@ dialog::backdrop {
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .drift-a, .drift-b, .streak, .rise, .loadbar, .skeleton, .sweep::after {
+  .drift-a, .drift-b, .rise, .loadbar, .skeleton, .sweep::after {
     animation: none !important;
   }
-  .streak { display: none; }
   * { transition-duration: 0.01ms !important; }
 }

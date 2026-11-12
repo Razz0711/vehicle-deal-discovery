@@ -4,7 +4,7 @@ import { StepShell } from "@/components/StepShell";
 import { getModel } from "@/data/catalog";
 import { sampleDeals } from "@/data/sampleDeals";
 import { loadStep } from "@/lib/guard";
-import { describe, hrefFor, modelKey, vehicleForm, vehicleKind, type RawParams } from "@/lib/selection";
+import { describe, hrefFor, modelKey, vehicleForm, type RawParams } from "@/lib/selection";
 import { slug } from "@/lib/slug";
 
 export const metadata: Metadata = { title: "Vehicle deals" };
@@ -27,7 +27,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Raw
     <StepShell
       index={6}
       sel={sel}
-      wide
+      aside={false}
       title={`${d.condition} ${d.brand} ${d.model} in ${d.city}`}
       intro={`${d.variant} variant · ${d.city}, ${d.state}. Every offer in one view, priced the same way.`}
     >
@@ -38,8 +38,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Raw
           title: `${d.brand} ${d.model}`,
           variant: d.variant ?? "",
           place: `${d.city}, ${d.state}`,
-          kind: vehicleKind(sel),
-          modelKey: modelKey(sel),
+          modelKey: modelKey(sel)!,
           condition: sel.condition!,
         }}
       />

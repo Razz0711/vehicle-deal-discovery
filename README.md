@@ -37,15 +37,26 @@ or generated vehicle images in the codebase. Sources, in priority order:
    `scooter.jpg`, `ev.jpg`, `ev-scooter.jpg`, `truck.jpg`), or
    `public/vehicles/models/<brand-id>/<model-id>.jpg` for one model. They are
    registered on the next `npm run dev` or `npm run build`.
-2. **Wikimedia Commons.** `src/data/remotePhotos.ts` lists five Creative
-   Commons photographs, loaded directly from Wikimedia's servers. Their
+2. **Wikimedia Commons.** `src/data/remotePhotos.ts` lists the Creative
+   Commons photographs in use, loaded directly from Wikimedia's servers. Their
    licences require attribution, which is given on the `/credits` page and
    linked from every step. Keep that page if you keep these photos.
 3. **Nothing.** If a photo is missing or fails to load, the slot shows an
    empty lit frame instead of a broken image.
 
-Listings show a "Representative photo" chip unless a model-specific file
-exists, because the type photo is not the exact model on offer.
+**Relevance rule.** `src/data/vehiclePhotos.ts` is the one place that decides
+which photograph may appear. `typePhoto(kind)` serves the vehicle-type cards on
+step 1 only. `modelPhoto("<brand-id>/<model-id>")` serves the model step and
+the deals page, and returns a photograph only if it depicts that exact model;
+it never falls back to a type photo. A model without its own photograph shows
+none. To cover another model, add a file under `public/vehicles/models/` or an
+entry to `REMOTE_MODEL_PHOTOS` in `src/data/remotePhotos.ts` (confirm the
+licence on the Commons page first); `/credits` updates automatically.
+
+**Offer labels.** Every listing carries a `basis`: `sample`, `seller-submitted`
+or `verified`. The generator in `src/data/sampleDeals.ts` only produces
+`sample`, and never sets stock status. The other two are reserved for real
+offers and must not be simulated.
 
 ## Design system
 
@@ -55,8 +66,8 @@ Defined as tokens in `src/app/globals.css`.
   `graphite`), white and grey text (`bright`, `fog`, `ash`), one accent
   (`ember`, #F27632) reserved for selection, progress and the primary action.
 - **Type:** Manrope for display, Inter for text, both self-hosted.
-- **Surfaces:** `.surface` (lit from above, hairline edge), `.glass` (header,
-  footer and compare tray only), `.is-selected` (ember ring with bloom).
+- **Surfaces:** `.surface` (lit from above, hairline edge), `.bar` (solid header,
+  footer and compare tray), `.is-selected` (ember ring with bloom).
 - **Background:** `components/chrome/Backdrop.tsx`, mounted once in the root
   layout. Two drifting key lights that glide to a new position per step, a
   parallax grid, light streaks and a small particle canvas. Transform-only,
