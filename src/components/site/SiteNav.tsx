@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { SITE } from "@/lib/site";
 import { Logo, usePublishedHeight } from "../chrome/TopBar";
@@ -15,19 +15,8 @@ const LINKS = [
 ];
 
 /** Navigation for the landing, account and information pages. */
-/** Display only: an auth cookie is present. Access is always decided on the server. */
-const noSubscribe = () => () => {};
-function useHasSessionCookie() {
-  return useSyncExternalStore(
-    noSubscribe,
-    () => /(?:^|;\s*)sb-[^=]+-auth-token(?:\.0)?=/.test(document.cookie),
-    () => false,
-  );
-}
-
 export function SiteNav() {
   const [open, setOpen] = useState(false);
-  const signedIn = useHasSessionCookie();
   const ref = usePublishedHeight();
 
   useEffect(() => {
@@ -54,20 +43,12 @@ export function SiteNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {signedIn ? (
-            <Link href="/account" className="flex min-h-11 items-center rounded-full px-5 text-sm font-semibold text-bright ring-1 ring-hairline-strong transition hover:bg-white/5">
-              Account
-            </Link>
-          ) : (
-            <>
-              <Link href="/signin" className="hidden min-h-11 items-center rounded-full px-4 text-sm font-medium text-fog transition-colors hover:text-bright sm:flex">
-                Sign In
-              </Link>
-              <Link href="/register" className="flex min-h-11 items-center rounded-full bg-ember px-5 text-sm font-semibold text-void transition hover:bg-[#ff8a4a] active:scale-[0.98]">
-                Get Started
-              </Link>
-            </>
-          )}
+          <Link href="/signin" className="hidden min-h-11 items-center rounded-full px-4 text-sm font-medium text-fog transition-colors hover:text-bright sm:flex">
+            Sign In
+          </Link>
+          <Link href="/register" className="flex min-h-11 items-center rounded-full bg-ember px-5 text-sm font-semibold text-void transition hover:bg-[#ff8a4a] active:scale-[0.98]">
+            Get Started
+          </Link>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}

@@ -4,7 +4,6 @@ import { StepShell } from "@/components/StepShell";
 import { getModel } from "@/data/catalog";
 import { sampleDeals } from "@/data/sampleDeals";
 import { loadStep } from "@/lib/guard";
-import { guard } from "@/lib/auth/session";
 import { describe, hrefFor, modelKey, vehicleForm, type RawParams } from "@/lib/selection";
 import { slug } from "@/lib/slug";
 
@@ -12,8 +11,6 @@ export const metadata: Metadata = { title: "Vehicle deals" };
 
 export default async function Page({ searchParams }: { searchParams: Promise<RawParams> }) {
   const sel = await loadStep(6, searchParams);
-  // Decision D14: actual offers only for registered buyers. Steps 1 to 6 stay public.
-  await guard("buyer", hrefFor("/deals", sel));
   const d = describe(sel);
   const model = getModel(sel.category!, sel.brand!, sel.model!)!;
   const variantIndex = Math.max(0, model.variants.findIndex((v) => slug(v) === sel.variant));

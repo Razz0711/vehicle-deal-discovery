@@ -1,2 +1,0 @@
-insert into public.legal_documents (kind, version, effective_from, body_sha256, url) values ('privacy_notice', '2026-11-13-preview-draft', now(), '7f7d3c9b3f92d844f21b8076be313eb685ffd6ba7724644fe7c9811f4b7a347a', '/privacy');
-insert into public.legal_documents (kind, version, effective_from, body_sha256, url) values ('terms', '2026-11-13-preview-draft', now(), '1b60ace0888b9bd9a736244ee89e3ca12123494a2d51d038b69c7accc51b3f08', '/terms');
