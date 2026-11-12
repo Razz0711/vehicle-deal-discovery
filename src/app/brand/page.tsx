@@ -8,11 +8,19 @@ import { change, hrefFor, type RawParams } from "@/lib/selection";
 
 export const metadata: Metadata = { title: "Choose a brand" };
 
+/** Initials for a brand tile. No brand logos are used. */
+function monogram(name: string): string {
+  const words = name.split(/[\s-]+/).filter(Boolean);
+  if (words.length > 1) return (words[0][0] + words[1][0]).toUpperCase();
+  return name.length <= 3 ? name.toUpperCase() : name.slice(0, 2);
+}
+
 export default async function Page({ searchParams }: { searchParams: Promise<RawParams> }) {
   const sel = await loadStep(4, searchParams);
   const category = getCategory(sel.category!);
   const items = CATALOG[category.id].map((brand) => ({
     id: brand.id,
+    mark: monogram(brand.name),
     label: brand.name,
     sub: brand.models.length + (brand.models.length === 1 ? " model" : " models"),
     href: hrefFor("/model", change(sel, "brand", brand.id)),

@@ -27,6 +27,8 @@ export type Deal = {
   onRoad?: number;
   breakdown: { label: string; amount: number }[];
   availability: string;
+  /** How the price is evidenced. Sample listings only simulate this. */
+  basis: "verified" | "seller-submitted";
   used?: { year: number; km: number; owners: number };
 };
 
@@ -100,6 +102,7 @@ export function sampleDeals(input: {
           { label: "Seller discount", amount: -discount },
         ],
         availability: rand() > 0.35 ? "In stock" : "On order",
+        basis: i % 2 === 0 ? ("verified" as const) : ("seller-submitted" as const),
       };
     });
   }
@@ -122,6 +125,7 @@ export function sampleDeals(input: {
       priceLabel: "Asking price",
       breakdown: [{ label: "Asking price", amount: price }],
       availability: "Available",
+      basis: sellerType === "Certified pre-owned" ? ("verified" as const) : ("seller-submitted" as const),
       used: {
         year,
         km: round(age * (6000 + rand() * 9000) + 3000, 500),

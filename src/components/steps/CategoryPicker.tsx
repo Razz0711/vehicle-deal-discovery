@@ -2,25 +2,31 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue } from "motion/react";
-import { Check } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { ArrowRight } from "lucide-react";
 import { CATEGORIES, type CategoryId } from "@/data/categories";
 import { change, hrefFor, vehicleKind, type Selection } from "@/lib/selection";
 import { VehiclePhoto } from "../vehicles/VehiclePhoto";
 
-/** How far each photograph in the opening line-up drifts with the pointer. */
-const DEPTH: Record<CategoryId, number> = { cars: 1, bikes: 0.55, scooters: 0.4, ev: 0.8, commercial: 0.3 };
+/** Bento placement: cars lead, the rest share the grid. */
+const SPAN: Record<CategoryId, string> = {
+  cars: "col-span-2 row-span-2 min-h-[300px] lg:col-span-2 lg:row-span-2",
+  bikes: "col-span-1 min-h-[190px]",
+  scooters: "col-span-1 min-h-[190px]",
+  ev: "col-span-1 min-h-[190px]",
+  commercial: "col-span-1 min-h-[190px]",
+};
 
+/**
+ * Step 1. Large photographic cards in a bento grid. Choosing one lights its
+ * border, sweeps light across it, then expands it to fill the screen
+ * (a shared layout transition) before the next step loads.
+ */
 export function CategoryPicker({ sel }: { sel: Selection }) {
   const router = useRouter();
   const reduce = useReducedMotion();
-  const [picked, setPicked] = useState<CategoryId | undefined>(sel.category);
-  const [leaving, setLeaving] = useState(false);
+  const [picked, setPicked] = useState<CategoryId | undefined>();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  // Subtle parallax: the line-up drifts a few pixels with the pointer.
-  const pointer = useMotionValue(0);
-  const drift = useSpring(pointer, { stiffness: 60, damping: 20 });
 
   useEffect(() => {
     CATEGORIES.forEach((c) => router.prefetch(hrefFor("/state", change(sel, "category", c.id))));
@@ -28,106 +34,109 @@ export function CategoryPicker({ sel }: { sel: Selection }) {
   }, [router, sel]);
 
   function choose(id: CategoryId) {
-    if (leaving) return;
+    if (picked) return;
     setPicked(id);
-    setLeaving(true);
     const go = () => router.push(hrefFor("/state", change(sel, "category", id)));
     if (reduce) go();
-    else timer.current = setTimeout(go, 800);
+    else timer.current = setTimeout(go, 900);
   }
 
-  return (
-    <div>
-      {/* Main visual area. Line-up of five photographs; the chosen one grows
-          to fill the frame (shared layout animation), then pushes in as the
-          next step loads. */}
-      <div
-        className="relative h-52 overflow-hidden rounded-md border border-line bg-ink-2 sm:h-72"
-        onPointerMove={(e) => {
-          const box = e.currentTarget.getBoundingClientRect();
-          pointer.set((e.clientX - box.left) / box.width - 0.5);
-        }}
-        onPointerLeave={() => pointer.set(0)}
-      >
-        <AnimatePresence mode="popLayout">
-          {picked ? (
-            <motion.div
-              key={"focus-" + picked}
-              layoutId={"vehicle-" + picked}
-              className="absolute inset-0 overflow-hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ type: "spring", stiffness: 120, damping: 22 }}
-            >
-              <motion.div className="absolute inset-0" animate={leaving ? { scale: 1.15, opacity: [1, 1, 0.4] } : { scale: 1, opacity: 1 }} transition={{ duration: 0.8, ease: "easeIn" }}>
-                <VehiclePhoto kind={vehicleKind({ category: picked })} sizes="(min-width: 1152px) 1100px, 100vw" priority />
-              </motion.div>
-            </motion.div>
-          ) : (
-            <motion.div key="lineup" className="absolute inset-0 flex items-center gap-2 p-3 sm:gap-3 sm:p-4" exit={{ opacity: 0 }}>
-              {CATEGORIES.map((c, i) => (
-                <LineupPhoto key={c.id} id={c.id} index={i} drift={drift} />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+  const pickedCat = CATEGORIES.find((c) => c.id === picked);
 
-      <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+  return (
+    <>
+      <ul className="grid auto-rows-[minmax(190px,auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {CATEGORIES.map((c, i) => {
-          const active = picked === c.id;
+          const current = sel.category === c.id;
           return (
-            <motion.li key={c.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.06, duration: 0.4 }}>
-              <motion.button
-                type="button"
-                onClick={() => choose(c.id)}
-                aria-pressed={active}
-                whileHover={{ y: -4 }}
-                whileTap={{ scale: 0.97 }}
-                className={`group flex h-full w-full flex-col overflow-hidden rounded-md border text-left transition-colors ${
-                  active ? "border-paper bg-paper text-ink" : "border-line bg-ink-2 hover:border-sky"
-                }`}
-              >
-                <span className="relative block h-24 w-full overflow-hidden sm:h-28">
-                  <span className="absolute inset-0 transition-transform duration-500 group-hover:scale-105">
-                    <VehiclePhoto kind={vehicleKind({ category: c.id })} sizes="(min-width: 1280px) 220px, (min-width: 768px) 33vw, 50vw" compact />
-                  </span>
-                  {active && (
-                    <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-paper text-blue-deep">
-                      <Check size={18} aria-hidden />
-                    </span>
-                  )}
-                </span>
-                <span className="block p-4">
-                  <span className="display block text-xl font-bold" style={{ fontStretch: "112%" }}>
-                    {c.label}
-                  </span>
-                  <span className={`mt-1 block text-sm ${active ? "text-slate" : "text-mist"}`}>{c.blurb}</span>
-                </span>
-              </motion.button>
+            <motion.li
+              key={c.id}
+              className={SPAN[c.id]}
+              initial={{ opacity: 0, y: 28, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.15 + i * 0.08, duration: 0.7, ease: [0.2, 0.7, 0.2, 1] }}
+            >
+              {picked === c.id ? (
+                <div className="h-full w-full rounded-[28px]" aria-hidden />
+              ) : (
+                <motion.button
+                  layoutId={"card-" + c.id}
+                  type="button"
+                  onClick={() => choose(c.id)}
+                  aria-label={`${c.label}: ${c.blurb}`}
+                  aria-pressed={current}
+                  disabled={!!picked}
+                  whileTap={{ scale: 0.985 }}
+                  className={`group relative flex h-full w-full overflow-hidden rounded-[28px] text-left transition-shadow duration-500 ${current ? "is-selected" : "surface hover:shadow-[0_0_0_1px_rgb(242_118_50/0.5),0_30px_60px_-30px_rgb(242_118_50/0.45)]"}`}
+                >
+                  <CardFace id={c.id} label={c.label} blurb={c.blurb} index={i} large={c.id === "cars"} current={current} />
+                </motion.button>
+              )}
             </motion.li>
           );
         })}
       </ul>
-      <p className="mt-4 text-sm text-mist" aria-live="polite">
-        {leaving && picked ? "Taking you to the next step…" : "Choosing a vehicle takes you straight to the next step."}
+      <p className="mt-5 text-sm text-ash" aria-live="polite">
+        {pickedCat ? `${pickedCat.label} selected. Loading states…` : "Choose a vehicle type to begin."}
       </p>
-    </div>
+
+      <AnimatePresence>
+        {pickedCat && (
+          <motion.div className="fixed inset-0 z-40 p-3 sm:p-6" initial={{ backgroundColor: "rgba(10,10,11,0)" }} animate={{ backgroundColor: "rgba(10,10,11,0.85)" }}>
+            <motion.div layoutId={"card-" + pickedCat.id} className="sweep is-selected relative flex h-full w-full overflow-hidden rounded-[32px]" transition={{ type: "spring", stiffness: 70, damping: 18 }}>
+              <CardFace id={pickedCat.id} label={pickedCat.label} blurb={pickedCat.blurb} index={CATEGORIES.indexOf(pickedCat)} large current hero />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
-function LineupPhoto({ id, index, drift }: { id: CategoryId; index: number; drift: MotionValue<number> }) {
-  const x = useTransform(drift, (v: number) => v * 28 * DEPTH[id]);
+function CardFace({
+  id,
+  label,
+  blurb,
+  index,
+  large,
+  current,
+  hero = false,
+}: {
+  id: CategoryId;
+  label: string;
+  blurb: string;
+  index: number;
+  large: boolean;
+  current: boolean;
+  hero?: boolean;
+}) {
   return (
-    <motion.div
-      layoutId={"vehicle-" + id}
-      style={{ x }}
-      className={`relative aspect-[4/3] min-w-0 flex-1 self-center overflow-hidden rounded ${index > 2 ? "hidden sm:block" : ""}`}
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.09, type: "spring", stiffness: 80, damping: 16 }}
-    >
-      <VehiclePhoto kind={vehicleKind({ category: id })} sizes="(min-width: 640px) 20vw, 33vw" compact priority />
-    </motion.div>
+    <>
+      <span className="absolute inset-0">
+        <VehiclePhoto
+          kind={vehicleKind({ category: id })}
+          sizes={large ? "(min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 25vw, 50vw"}
+          priority={large}
+          showNote={large || hero}
+          className="transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-[1.06]"
+        />
+      </span>
+      <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-void via-void/35 to-transparent" />
+      <span className="relative mt-auto flex w-full items-end justify-between gap-3 p-5 sm:p-6">
+        <span className="min-w-0">
+          <span className="eyebrow block text-ember tnum">{String(index + 1).padStart(2, "0")}</span>
+          <span className={`display mt-2 block font-extrabold ${hero ? "text-5xl sm:text-7xl" : large ? "text-4xl sm:text-5xl" : "text-2xl sm:text-[1.7rem]"}`}>{label}</span>
+          <span className={`mt-1.5 block text-fog ${large ? "text-base" : "hidden text-sm sm:block"}`}>{blurb}</span>
+        </span>
+        <span
+          aria-hidden
+          className={`flex h-11 w-11 flex-none items-center justify-center rounded-full transition-all duration-300 ${
+            current || hero ? "bg-ember text-void" : "bg-white/10 text-bright group-hover:bg-ember group-hover:text-void"
+          }`}
+        >
+          <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </span>
+    </>
   );
 }
