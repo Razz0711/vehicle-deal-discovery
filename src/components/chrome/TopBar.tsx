@@ -8,6 +8,24 @@ import { Check, RotateCcw } from "lucide-react";
 import { STEPS, hrefFor, parseSelection } from "@/lib/selection";
 import { SITE } from "@/lib/site";
 
+/**
+ * Publishes a header's real height as --header-h, so sticky panels and
+ * scroll targets sit exactly below it, whatever the screen size.
+ */
+export function usePublishedHeight(active: boolean = true) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty("--header-h", el.offsetHeight + "px");
+    set();
+    const observer = new ResizeObserver(set);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [active]);
+  return ref;
+}
+
 export function Logo() {
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden>
@@ -29,18 +47,10 @@ export function TopBar() {
   const known = STEPS.some((s) => s.path === path);
   const fill = index / (STEPS.length - 1);
 
-  // Publish the bar's real height so sticky panels and scroll targets
-  // elsewhere sit exactly below it, whatever the screen size.
-  const ref = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const set = () => document.documentElement.style.setProperty("--header-h", el.offsetHeight + "px");
-    set();
-    const observer = new ResizeObserver(set);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const ref = usePublishedHeight(known);
+
+  // The landing, account and information pages carry their own navigation.
+  if (!known) return null;
 
   return (
     <header ref={ref} className="bar sticky top-0 z-30 border-b border-hairline">
@@ -49,14 +59,13 @@ export function TopBar() {
           <Logo />
           {SITE.name}
         </Link>
-        <Link href="/" className="flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-fog transition-colors hover:bg-white/5 hover:text-bright">
+        <Link href="/explore" className="flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-fog transition-colors hover:bg-white/5 hover:text-bright">
           <RotateCcw size={15} aria-hidden />
           Start over
         </Link>
       </div>
 
-      {known && (
-        <nav aria-label="Progress" className="mx-auto max-w-7xl px-5 pb-3 sm:px-8">
+      <nav aria-label="Progress" className="mx-auto max-w-7xl px-5 pb-3 sm:px-8">
           <div className="relative h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
             <motion.div
               className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ember-deep to-ember shadow-[0_0_12px_rgb(242_118_50/0.7)]"
@@ -98,8 +107,7 @@ export function TopBar() {
               {index + 1} / {STEPS.length}
             </li>
           </ol>
-        </nav>
-      )}
+      </nav>
     </header>
   );
 }

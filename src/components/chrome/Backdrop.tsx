@@ -14,7 +14,7 @@ import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } fro
  * stops when the tab is hidden or reduced motion is on.
  */
 
-const STEP_PATHS = ["/", "/state", "/city", "/condition", "/brand", "/model", "/deals"];
+const STEP_PATHS = ["/explore", "/state", "/city", "/condition", "/brand", "/model", "/deals"];
 
 /** Where the two key lights sit for each step, in viewport units. */
 const LIGHTS: { a: [number, number]; b: [number, number] }[] = [

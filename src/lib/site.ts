@@ -4,7 +4,11 @@
  */
 export const SITE = {
   name: "DealFinder",
-  tagline: "Find the right vehicle. Discover the better deal.",
+  tagline: "Your Next Vehicle. Your Best Deal.",
   description:
-    "Choose a vehicle, a place and a brand, then compare offers from different sellers.",
+    "Compare prices, explore offers across India, and find the right vehicle, all in one place.",
+  /** Public contact address. Leave empty until one exists; the Contact page adapts. */
+  contactEmail: "",
+  /** Social profile links, e.g. { label: "Instagram", href: "https://…" }. Empty until real ones exist. */
+  social: [] as { label: string; href: string }[],
 } as const;

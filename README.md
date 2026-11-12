@@ -58,6 +58,18 @@ or `verified`. The generator in `src/data/sampleDeals.ts` only produces
 `sample`, and never sets stock status. The other two are reserved for real
 offers and must not be simulated.
 
+## Site map
+
+- `/` landing page, `/register` sign-up, `/signin`, `/about`, `/contact`,
+  `/privacy`, `/terms`, `/credits`.
+- `/explore` is step 1 of the buyer journey (it used to be `/`; old links
+  with a selection redirect there), followed by `/state` … `/deals`.
+- Accounts are not connected: `src/lib/auth.ts` is the single boundary and
+  reports "not configured". See `docs/ARCHITECTURE.md` for roles (buyer,
+  seller, admin), reserved routes and the proposed data model.
+- Landing-page vehicles: edit `src/data/showcase.ts`. Every photo there must
+  also be listed in `src/data/remotePhotos.ts`, which feeds `/credits`.
+
 ## Design system
 
 Defined as tokens in `src/app/globals.css`.

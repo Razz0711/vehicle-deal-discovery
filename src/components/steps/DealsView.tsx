@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, ChevronDown, FileText, FlaskConical, Info, MapPin, Scale, SearchX, X } from "lucide-react";
+import { BadgeCheck, BadgeIndianRupee, ChevronDown, FileText, FlaskConical, Info, MapPin, Scale, SearchX, X } from "lucide-react";
 import type { Deal, SellerType } from "@/data/sampleDeals";
 import { formatINR } from "@/lib/slug";
 import { VehiclePhoto, hasModelPhoto } from "../vehicles/VehiclePhoto";
@@ -21,6 +21,7 @@ const signed = (n: number) => (n < 0 ? "− " + formatINR(-n) : formatINR(n));
  */
 const BASIS = {
   sample: { label: "Sample price", Icon: FlaskConical, tone: "bg-white/[0.06] text-fog", meaning: "Made-up figure for layout only. Not an offer." },
+  estimated: { label: "Estimated", Icon: BadgeIndianRupee, tone: "bg-white/[0.06] text-fog", meaning: "Worked out from published prices and charges. A guide, not a quote." },
   "seller-submitted": { label: "Seller-submitted", Icon: FileText, tone: "bg-white/[0.06] text-bright", meaning: "Quoted by the seller. Not yet checked by us." },
   verified: { label: "Verified price", Icon: BadgeCheck, tone: "bg-verify/10 text-verify", meaning: "Backed by an invoice or booking record we have checked." },
 } as const;
@@ -186,7 +187,7 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
           </select>
         </label>
       </div>
-      <dl className="order-last grid gap-2 text-xs sm:order-none sm:-mt-2 sm:grid-cols-3" aria-label="What the price labels mean">
+      <dl className="order-last grid gap-2 text-xs sm:order-none sm:-mt-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="What the price labels mean">
         {(Object.keys(BASIS) as Deal["basis"][]).map((key) => (
           <div key={key} className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-hairline">
             <dt>

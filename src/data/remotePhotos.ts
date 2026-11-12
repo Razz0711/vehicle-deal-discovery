@@ -133,8 +133,72 @@ export const REMOTE_MODEL_PHOTOS: RemotePhoto[] = [
   },
 ];
 
+/**
+ * Photographs used only as atmosphere on the landing page. They are not in
+ * the catalogue (`models` is empty), so they can never appear on a model or
+ * deals page. Widths marked "assumed" were not shown in the source listing
+ * and are set low so only small thumbnails are requested.
+ */
+export const REMOTE_SHOWCASE_PHOTOS: RemotePhoto[] = [
+  {
+    title: "Porsche 992 Carrera S coupe IMG 5843.jpg",
+    path: "c/c5/Porsche_992_Carrera_S_coupe_IMG_5843.jpg",
+    width: 5240,
+    shows: "Porsche 911 Carrera S (992)",
+    alt: "A white Porsche 911 Carrera S coupe",
+    author: "Alexander Migl (Alexander-93)",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    models: [],
+  },
+  {
+    title: "Lamborghini Huracan Evo IMG 3679.jpg",
+    path: "7/77/Lamborghini_Huracan_Evo_IMG_3679.jpg",
+    width: 5313,
+    shows: "Lamborghini Huracán Evo",
+    alt: "An orange Lamborghini Huracán Evo",
+    author: "Alexander Migl (Alexander-93)",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    models: [],
+  },
+  {
+    title: "Mercedes-Benz EQS 450+ V297 white (2).jpg",
+    path: "f/f2/Mercedes-Benz_EQS_450%2B_V297_white_(2).jpg",
+    width: 1300, // assumed
+    shows: "Mercedes-Benz EQS 450+",
+    alt: "A white Mercedes-Benz EQS electric car",
+    author: "Damian B Oh",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    models: [],
+  },
+  {
+    title: "Land Rover Range Rover (5th generation) 1X7A6927.jpg",
+    path: "c/c6/Land_Rover_Range_Rover_(5th_generation)_1X7A6927.jpg",
+    width: 5646,
+    shows: "Range Rover (fifth generation)",
+    alt: "A fifth-generation Range Rover SUV",
+    author: "Alexander-93",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    models: [],
+  },
+  {
+    title: "Ducati Panigale V4 R (2).jpg",
+    path: "e/ef/Ducati_Panigale_V4_R_(2).jpg",
+    width: 2792,
+    shows: "Ducati Panigale V4 R",
+    alt: "A Ducati Panigale V4 R motorcycle",
+    author: "Cjp24",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    models: [],
+  },
+];
+
 /** Every third-party photograph in use, for lookup and for /credits. */
-export const ALL_REMOTE_PHOTOS: RemotePhoto[] = [...Object.values(REMOTE_PHOTOS), ...REMOTE_MODEL_PHOTOS];
+export const ALL_REMOTE_PHOTOS: RemotePhoto[] = [...Object.values(REMOTE_PHOTOS), ...REMOTE_MODEL_PHOTOS, ...REMOTE_SHOWCASE_PHOTOS];
 
 /** Thumbnail widths Wikimedia serves. Other widths can be refused. */
 const THUMB_STEPS = [500, 960, 1280, 1920];

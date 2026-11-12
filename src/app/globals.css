@@ -165,3 +165,56 @@ dialog::backdrop {
   }
   * { transition-duration: 0.01ms !important; }
 }
+
+/* ---------- Landing page: moving vehicles ---------- */
+
+/* A photograph that fades into the dark at its edges, so it reads as a
+   vehicle hanging in space rather than a framed picture. */
+.plate {
+  -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 50%, transparent 97%);
+  mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 50%, transparent 97%);
+}
+.plate img { filter: saturate(0.82) contrast(1.06) brightness(0.86); }
+
+@keyframes hover-y {
+  0%, 100% { transform: translate3d(0, -10px, 0) rotate(-0.4deg); }
+  50% { transform: translate3d(0, 12px, 0) rotate(0.4deg); }
+}
+.hover-y { animation: hover-y var(--dur, 9s) ease-in-out var(--delay, 0s) infinite; will-change: transform; }
+
+/* Slow pass from the right edge to the left, then again. */
+@keyframes glide-left {
+  from { transform: translate3d(110vw, 0, 0); }
+  to { transform: translate3d(-60vw, 0, 0); }
+}
+@keyframes glide-right {
+  from { transform: translate3d(-60vw, 0, 0); }
+  to { transform: translate3d(110vw, 0, 0); }
+}
+.glide-left { animation: glide-left var(--dur, 70s) linear var(--delay, 0s) infinite; will-change: transform; }
+.glide-right { animation: glide-right var(--dur, 80s) linear var(--delay, 0s) infinite; will-change: transform; }
+
+/* Thin passing lights, like traffic at night. */
+@keyframes light-pass {
+  0% { transform: translate3d(-40vw, 0, 0); opacity: 0; }
+  12%, 80% { opacity: 1; }
+  100% { transform: translate3d(140vw, 0, 0); opacity: 0; }
+}
+.light-pass { animation: light-pass var(--dur, 7s) cubic-bezier(0.3, 0, 0.2, 1) var(--delay, 0s) infinite; will-change: transform, opacity; }
+
+/* Endless horizontal showcase. The track holds its items twice. */
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.marquee { animation: marquee var(--dur, 80s) linear infinite; will-change: transform; }
+.marquee-reverse { animation-direction: reverse; }
+.marquee-wrap:hover .marquee, .marquee-wrap:focus-within .marquee { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hover-y, .light-pass, .marquee { animation: none !important; }
+  /* Gliding vehicles would otherwise rest off-screen: hide them and let the
+     stationary ones carry the scene. */
+  .glide-left, .glide-right, .light-pass { display: none !important; }
+  .marquee-wrap { overflow-x: auto; }
+}

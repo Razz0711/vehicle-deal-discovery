@@ -18,7 +18,7 @@ const DEPENDENTS: Record<number, number[]> = { 0: [4, 5], 1: [2], 4: [5] };
 function rows(sel: Selection, index: number): Row[] {
   const d = describe(sel);
   const base = [
-    { label: "Vehicle", value: d.category, path: "/" },
+    { label: "Vehicle", value: d.category, path: "/explore" },
     { label: "State", value: d.state, path: "/state" },
     { label: "City", value: d.city, path: "/city" },
     { label: "Condition", value: d.condition, path: "/condition" },

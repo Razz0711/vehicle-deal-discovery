@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteNav } from "@/components/site/SiteNav";
 import { ALL_REMOTE_PHOTOS, commonsPage } from "@/data/remotePhotos";
 
 export const metadata: Metadata = { title: "Photo credits" };
@@ -9,12 +11,14 @@ export const metadata: Metadata = { title: "Photo credits" };
 export default function CreditsPage() {
   const photos = ALL_REMOTE_PHOTOS;
   return (
+    <>
+    <SiteNav />
     <main className="mx-auto max-w-3xl px-5 pb-24 pt-10 sm:px-8 sm:pt-16">
       <p className="eyebrow text-ember">Attribution</p>
       <h1 className="display mt-4 text-4xl font-extrabold sm:text-5xl">Photo credits</h1>
       <p className="mt-5 text-lg text-fog">
         The vehicle photographs on this site come from Wikimedia Commons and are used under the Creative Commons licences listed below. They are shown cropped to fit, and in
-        places darkened or desaturated. Each one illustrates a vehicle type or a named model. None is a photograph of a vehicle offered for sale.
+        places darkened or desaturated. Each one illustrates a vehicle type or a named model, or sets the scene on the home page. None is a photograph of a vehicle offered for sale.
       </p>
       <ul className="mt-10 flex flex-col gap-3">
         {photos.map((p) => (
@@ -39,5 +43,7 @@ export default function CreditsPage() {
         Back to the start
       </Link>
     </main>
+    <SiteFooter />
+    </>
   );
 }

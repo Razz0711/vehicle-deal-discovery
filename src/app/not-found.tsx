@@ -9,9 +9,9 @@ export default function NotFound() {
       </span>
       <p className="eyebrow mt-6 text-ember">Page not found</p>
       <h1 className="display mt-3 text-4xl font-extrabold sm:text-5xl">This road doesn’t go anywhere</h1>
-      <p className="mt-4 text-lg text-fog">The page you asked for doesn’t exist or has moved. Start again from the first step.</p>
+      <p className="mt-4 text-lg text-fog">The page you asked for doesn’t exist or has moved. Head back to the home page.</p>
       <Link href="/" className="group mt-8 flex min-h-12 items-center gap-2 rounded-full bg-ember pl-6 pr-5 font-semibold text-void hover:bg-[#ff8a4a]">
-        Choose a vehicle
+        Back to home
         <ArrowRight size={18} aria-hidden className="transition-transform group-hover:translate-x-1" />
       </Link>
     </main>

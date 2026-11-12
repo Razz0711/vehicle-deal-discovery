@@ -30,9 +30,9 @@ export type Deal = {
   availability?: string;
   /**
    * How the price is evidenced. Sample listings are always "sample": the
-   * other two values are reserved for real offers and must never be simulated.
+   * other values are reserved for real offers and must never be simulated.
    */
-  basis: "sample" | "seller-submitted" | "verified";
+  basis: "sample" | "estimated" | "seller-submitted" | "verified";
   used?: { year: number; km: number; owners: number };
 };
 

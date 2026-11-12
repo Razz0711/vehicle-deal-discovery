@@ -100,7 +100,7 @@ export function change(sel: Selection, key: SelectionKey, value: string): Select
 export type Step = { path: string; label: string; done: (sel: Selection) => boolean };
 
 export const STEPS: Step[] = [
-  { path: "/", label: "Vehicle", done: (s) => !!s.category },
+  { path: "/explore", label: "Vehicle", done: (s) => !!s.category },
   { path: "/state", label: "State", done: (s) => !!s.state },
   { path: "/city", label: "City", done: (s) => !!s.city },
   { path: "/condition", label: "Condition", done: (s) => !!s.condition },
