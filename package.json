@@ -9,16 +9,30 @@
     "prebuild": "node scripts/scan-photos.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types \"src/**/*.test.ts\" \"scripts/**/*.test.mjs\"",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "postbuild": "node scripts/check-secrets.mjs --bundle",
+    "supabase": "supabase",
+    "test:db": "node scripts/db-tests.mjs local",
+    "test:db:concurrency": "node scripts/db-concurrency.mjs",
+    "test:db:generate": "node scripts/db-tests.mjs generate",
+    "test:http": "node scripts/http-smoke.mjs",
+    "test:e2e:staging:phone": "node scripts/e2e-auth-staging.mjs",
+    "legal:hashes": "node scripts/legal-hashes.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/manrope": "^5.3.0",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.119.0",
     "lucide-react": "^1.72.0",
     "motion": "^14.12.0",
     "next": "16.4.6",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
@@ -27,6 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "supabase": "^3.1.0",
     "tailwindcss": "4.3.3",
     "typescript": "^5"
   }
