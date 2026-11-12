@@ -11,6 +11,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Raw
   const sel = await loadStep(1, searchParams);
   const items = REGIONS.map((r) => ({
     id: r.code,
+    mark: r.code,
     label: r.name,
     sub: r.cities.length + (r.cities.length === 1 ? " city" : " cities"),
     group: r.type === "state" ? "States" : "Union territories",

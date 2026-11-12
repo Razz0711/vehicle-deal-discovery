@@ -1,98 +1,169 @@
 @import "tailwindcss";
 
-/* Design tokens. One dark "showroom at night" world; pale paper is used only
-   for the objects the customer acts on (selected cards, price sheets). */
+/*
+ * Design tokens. A single night-studio world: near-black ground, graphite
+ * surfaces lifted by light rather than borders, one ember accent used
+ * sparingly for selection, progress and the primary action.
+ */
 @theme {
-  --color-ink: #0b1530;
-  --color-ink-2: #111d3d;
-  --color-ink-3: #070e22;
-  --color-line: #263765;
-  --color-edge: #33456e;
-  --color-paper: #f3f5f9;
-  --color-mist: #a9b6ce;
-  --color-soft: #c9d4e8;
-  --color-blue: #2563eb;
-  --color-blue-deep: #1d4ed8;
-  --color-sky: #8fb4ff;
-  --color-warn: #ffb4a8;
-  --color-slate: #4a5873;
+  --color-void: #0a0a0b;
+  --color-coal: #111113;
+  --color-graphite: #18181b;
+  --color-steel: #232327;
+  --color-hairline: rgb(255 255 255 / 0.08);
+  --color-hairline-strong: rgb(255 255 255 / 0.16);
+  --color-bright: #f5f5f4;
+  --color-fog: #a1a1aa;
+  --color-ash: #8b8b93;
+  --color-ember: #f27632;
+  --color-ember-deep: #d9601f;
+  --color-ember-soft: rgb(242 118 50 / 0.14);
+  --color-verify: #6ee7b7;
+  --color-danger: #fca5a5;
 
-  --font-display: "Archivo Variable", "Arial Narrow", sans-serif;
-  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --font-display: "Manrope Variable", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 html {
   color-scheme: dark;
   scroll-behavior: smooth;
+  background: var(--color-void);
 }
 
 body {
-  background: var(--color-ink);
-  color: #f3f6fb;
+  /* Transparent on purpose: the animated Backdrop sits behind the page. */
+  background: transparent;
+  color: var(--color-bright);
   font-family: var(--font-sans);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.55;
+  font-feature-settings: "cv11", "ss01";
 }
 
 .display {
   font-family: var(--font-display);
-  font-stretch: 114%;
-  letter-spacing: -0.02em;
-  line-height: 1.06;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
   text-wrap: balance;
 }
 
 .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  letter-spacing: 0.06em;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.grid-floor {
-  background-image:
-    linear-gradient(#131f42 1px, transparent 1px),
-    linear-gradient(90deg, #131f42 1px, transparent 1px);
-  background-size: 64px 64px;
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Raised graphite surface: light from above instead of a heavy border. */
+.surface {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0.015)), var(--color-coal);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 0 0 1px var(--color-hairline),
+    0 20px 40px -24px rgb(0 0 0 / 0.8);
+}
+
+.glass {
+  background: rgb(17 17 19 / 0.62);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+/* Selected state: ember ring with a soft bloom. */
+.is-selected {
+  box-shadow:
+    0 0 0 1.5px var(--color-ember),
+    0 0 0 6px rgb(242 118 50 / 0.12),
+    0 24px 50px -20px rgb(242 118 50 / 0.35);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-sky);
+  outline: 2px solid var(--color-ember);
   outline-offset: 3px;
 }
 
 ::placeholder {
-  color: #8a99b8;
+  color: var(--color-ash);
 }
 
-@keyframes shimmer {
-  0% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 0.7;
-  }
-  100% {
-    opacity: 0.35;
-  }
+::selection {
+  background: rgb(242 118 50 / 0.35);
 }
-.skeleton {
-  animation: shimmer 1.4s ease-in-out infinite;
+
+/* ---------- Background motion ---------- */
+@keyframes drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(6vw, 4vh, 0) scale(1.12); }
 }
+@keyframes drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50% { transform: translate3d(-5vw, -6vh, 0) scale(0.95); }
+}
+@keyframes streak {
+  0% { transform: translate3d(-40vw, 0, 0) rotate(-18deg); opacity: 0; }
+  12% { opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translate3d(140vw, 0, 0) rotate(-18deg); opacity: 0; }
+}
+.drift-a { animation: drift-a 26s ease-in-out infinite; }
+.drift-b { animation: drift-b 32s ease-in-out infinite; }
+.streak { animation: streak 11s var(--ease-out-soft) infinite; }
+
+/* ---------- Content entrance ---------- */
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.7s var(--ease-out-soft) both; }
+
+/* Light sweep across a card when it is selected. */
+@keyframes sweep {
+  from { transform: translateX(-120%) skewX(-18deg); }
+  to { transform: translateX(220%) skewX(-18deg); }
+}
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent);
+  animation: sweep 0.9s var(--ease-out-soft) both;
+  pointer-events: none;
+}
+
+/* Indeterminate loading bar. */
+@keyframes loadbar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+.loadbar { animation: loadbar 1.2s var(--ease-out-soft) infinite; }
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.8; }
+}
+.skeleton { animation: pulse-soft 1.6s ease-in-out infinite; }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
 dialog::backdrop {
-  background: rgba(7, 14, 34, 0.75);
+  background: rgb(5 5 6 / 0.72);
+  backdrop-filter: blur(6px);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
+  html { scroll-behavior: auto; }
+  .drift-a, .drift-b, .streak, .rise, .loadbar, .skeleton, .sweep::after {
+    animation: none !important;
   }
-  .skeleton {
-    animation: none;
-  }
-  * {
-    transition-duration: 0.01ms !important;
-  }
+  .streak { display: none; }
+  * { transition-duration: 0.01ms !important; }
 }

@@ -4,7 +4,7 @@ import { StepShell } from "@/components/StepShell";
 import { getModel } from "@/data/catalog";
 import { sampleDeals } from "@/data/sampleDeals";
 import { loadStep } from "@/lib/guard";
-import { describe, modelKey, vehicleForm, vehicleKind, type RawParams } from "@/lib/selection";
+import { describe, hrefFor, modelKey, vehicleForm, vehicleKind, type RawParams } from "@/lib/selection";
 import { slug } from "@/lib/slug";
 
 export const metadata: Metadata = { title: "Vehicle deals" };
@@ -29,10 +29,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Raw
       sel={sel}
       wide
       title={`${d.condition} ${d.brand} ${d.model} in ${d.city}`}
-      intro={`${d.variant} variant · ${d.city}, ${d.state}. Compare what each seller is asking, line by line.`}
+      intro={`${d.variant} variant · ${d.city}, ${d.state}. Every offer in one view, priced the same way.`}
     >
       <DealsView
         deals={deals}
+        editHref={hrefFor("/city", sel)}
         vehicle={{
           title: `${d.brand} ${d.model}`,
           variant: d.variant ?? "",

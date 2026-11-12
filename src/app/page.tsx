@@ -7,7 +7,7 @@ import { SITE } from "@/lib/site";
 export default async function Page({ searchParams }: { searchParams: Promise<RawParams> }) {
   const sel = await loadStep(0, searchParams);
   return (
-    <StepShell index={0} sel={sel} stage={false} title="What are you looking to buy?" intro={SITE.tagline + " Start by choosing a vehicle type."}>
+    <StepShell index={0} sel={sel} stage={false} title="What will you drive next?" intro={SITE.tagline + " Start with the kind of vehicle you want."}>
       <CategoryPicker sel={sel} />
     </StepShell>
   );
