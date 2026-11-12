@@ -11,6 +11,10 @@ import { SITE } from "@/lib/site";
 export const metadata: Metadata = {
   title: { default: SITE.name, template: "%s · " + SITE.name },
   description: SITE.description,
+  openGraph: { title: SITE.name, description: SITE.description, type: "website", siteName: SITE.name },
+  // Pre-launch: the deals shown are sample data, so keep the site out of
+  // search results. Remove this line when real offers are connected.
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = { themeColor: "#0a0a0b" };

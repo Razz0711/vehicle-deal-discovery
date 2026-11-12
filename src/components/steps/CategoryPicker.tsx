@@ -10,11 +10,11 @@ import { VehiclePhoto } from "../vehicles/VehiclePhoto";
 
 /** Bento placement: cars lead, the rest share the grid. */
 const SPAN: Record<CategoryId, string> = {
-  cars: "col-span-2 row-span-2 min-h-[300px] lg:col-span-2 lg:row-span-2",
-  bikes: "col-span-1 min-h-[190px]",
-  scooters: "col-span-1 min-h-[190px]",
-  ev: "col-span-1 min-h-[190px]",
-  commercial: "col-span-1 min-h-[190px]",
+  cars: "col-span-2 row-span-2 min-h-[260px] lg:col-span-2 lg:row-span-2",
+  bikes: "col-span-1 min-h-[170px]",
+  scooters: "col-span-1 min-h-[170px]",
+  ev: "col-span-1 min-h-[170px]",
+  commercial: "col-span-1 min-h-[170px]",
 };
 
 /**
@@ -45,7 +45,7 @@ export function CategoryPicker({ sel }: { sel: Selection }) {
 
   return (
     <>
-      <ul className="grid auto-rows-[minmax(190px,auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <ul className="grid auto-rows-[minmax(170px,auto)] grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {CATEGORIES.map((c, i) => {
           const current = sel.category === c.id;
           return (
@@ -63,7 +63,6 @@ export function CategoryPicker({ sel }: { sel: Selection }) {
                   layoutId={"card-" + c.id}
                   type="button"
                   onClick={() => choose(c.id)}
-                  aria-label={`${c.label}: ${c.blurb}`}
                   aria-pressed={current}
                   disabled={!!picked}
                   whileTap={{ scale: 0.985 }}
@@ -118,15 +117,16 @@ function CardFace({
           sizes={large ? "(min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 25vw, 50vw"}
           priority={large}
           showNote={large || hero}
+          decorative
           className="transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-[1.06]"
         />
       </span>
       <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-void via-void/35 to-transparent" />
-      <span className="relative mt-auto flex w-full items-end justify-between gap-3 p-5 sm:p-6">
+      <span className="relative mt-auto flex w-full items-end justify-between gap-3 p-4 sm:p-6">
         <span className="min-w-0">
           <span className="eyebrow block text-ember tnum">{String(index + 1).padStart(2, "0")}</span>
           <span className={`display mt-2 block font-extrabold ${hero ? "text-5xl sm:text-7xl" : large ? "text-4xl sm:text-5xl" : "text-2xl sm:text-[1.7rem]"}`}>{label}</span>
-          <span className={`mt-1.5 block text-fog ${large ? "text-base" : "hidden text-sm sm:block"}`}>{blurb}</span>
+          <span className={`mt-1.5 block text-fog ${large ? "text-base" : "text-sm max-sm:sr-only"}`}>{blurb}</span>
         </span>
         <span
           aria-hidden

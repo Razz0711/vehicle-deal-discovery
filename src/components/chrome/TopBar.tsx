@@ -71,7 +71,7 @@ export function TopBar() {
               return (
                 <li key={step.path} aria-current={current ? "step" : undefined} className={current ? "" : "hidden sm:block"}>
                   {reachable && !current ? (
-                    <Link href={hrefFor(step.path, sel)} className="block rounded-full px-2 py-1.5 transition-colors hover:bg-white/5">
+                    <Link href={hrefFor(step.path, sel)} className="flex items-center rounded-full px-2 py-1.5 transition-colors hover:bg-white/5 [@media(pointer:coarse)]:min-h-11">
                       {content}
                     </Link>
                   ) : (

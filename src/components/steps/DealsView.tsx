@@ -105,28 +105,28 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
       <div className="flex gap-3 rounded-2xl bg-ember-soft px-4 py-3.5 ring-1 ring-ember/30" role="note">
         <Info size={18} aria-hidden className="mt-0.5 flex-none text-ember" />
         <p className="text-sm text-bright/90">
-          <strong>Sample listings, not real offers.</strong> Sellers are fictional, prices are placeholder numbers and the “verified” badges are simulated. This is how real
-          offers will appear once sellers and price evidence are connected.
+          <strong>Sample listings, not real offers.</strong> Sellers, prices and “verified” badges are placeholders.
+          <span className="hidden sm:inline"> This is how real offers will appear once sellers and price evidence are connected.</span>
         </p>
       </div>
 
       {/* At-a-glance price range */}
-      <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE }} className="surface rounded-3xl p-5 sm:p-7" aria-label="Price range">
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 sm:gap-6">
+      <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE }} className="surface rounded-3xl p-4 sm:p-7" aria-label="Price range">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6">
           <div className="order-2 sm:order-1">
             <p className="eyebrow text-ash">Offers</p>
-            <p className="display tnum mt-2 text-3xl font-extrabold sm:text-4xl">{deals.length}</p>
+            <p className="display tnum mt-1 text-2xl font-extrabold sm:mt-2 sm:text-4xl">{deals.length}</p>
           </div>
           <div className="order-1 col-span-2 sm:order-2 sm:col-span-1">
             <p className="eyebrow text-ash">Lowest {priceWord}</p>
-            <p className="display tnum mt-2 text-4xl font-extrabold text-ember">{formatINR(low)}</p>
+            <p className="display tnum mt-1 text-4xl font-extrabold text-ember sm:mt-2">{formatINR(low)}</p>
           </div>
           <div className="order-3">
             <p className="eyebrow text-ash">Gap, low to high</p>
-            <p className="display tnum mt-2 text-3xl font-extrabold sm:text-4xl">{formatINR(spread)}</p>
+            <p className="display tnum mt-1 text-2xl font-extrabold sm:mt-2 sm:text-4xl">{formatINR(spread)}</p>
           </div>
         </div>
-        <div className="mt-7" aria-hidden>
+        <div className="mt-7 hidden sm:block" aria-hidden>
           <div className="relative h-1.5 rounded-full bg-white/[0.08]">
             {deals.map((d, i) => (
               <motion.span
@@ -168,7 +168,7 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
           </select>
         </label>
       </div>
-      <p className="-mt-2 text-xs text-ash">
+      <p className="order-last text-xs text-ash sm:order-none sm:-mt-2">
         <span className="text-verify">Verified</span> prices are backed by an invoice or booking record that has been checked. <span className="text-fog">Seller-submitted</span> prices are
         quoted by the seller and not yet checked.
       </p>
@@ -201,7 +201,7 @@ export function DealsView({ deals, vehicle, editHref }: { deals: Deal[]; vehicle
                   className={`group surface overflow-hidden rounded-3xl transition-shadow duration-500 ${selected ? "is-selected" : ""}`}
                 >
                   <div className="grid lg:grid-cols-[300px_minmax(0,1fr)_280px]">
-                    <div className="relative h-48 overflow-hidden lg:h-auto lg:min-h-56">
+                    <div className="relative h-40 overflow-hidden sm:h-48 lg:h-auto lg:min-h-56">
                       <VehiclePhoto
                         kind={vehicle.kind}
                         modelKey={vehicle.modelKey}

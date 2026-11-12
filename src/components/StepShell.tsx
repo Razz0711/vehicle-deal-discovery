@@ -76,25 +76,27 @@ export function StepShell({
   const next = index < STEPS.length - 1 ? STEPS[index + 1] : undefined;
   const canContinue = step.done(sel);
   const showAside = stage && !wide;
+  // Step 1 keeps its header short so the photo cards fit on a laptop screen.
+  const first = index === 0;
 
   return (
     <div className="flex min-h-[calc(100vh-104px)] flex-col">
       <main className="flex-1">
-        <div className={`mx-auto grid max-w-7xl gap-10 px-5 pb-16 pt-8 sm:px-8 sm:pt-14 ${showAside ? "lg:grid-cols-[minmax(0,1fr)_360px] xl:gap-14" : ""}`}>
+        <div className={`mx-auto grid max-w-7xl gap-10 px-5 pb-10 sm:px-8 ${first ? "pt-6 sm:pt-8" : "pt-8 sm:pt-14"} ${showAside ? "lg:grid-cols-[minmax(0,1fr)_360px] xl:gap-14" : ""}`}>
           <div className="min-w-0">
             {index > 0 && <SummaryChips sel={sel} />}
             <p className="eyebrow rise text-ember">
               Step {index + 1} · {step.label}
             </p>
-            <h1 className="display rise mt-4 text-[2.5rem] font-extrabold sm:text-6xl" style={{ animationDelay: "60ms" }}>
+            <h1 className={`display rise font-extrabold ${first ? "mt-3 text-[2.25rem] sm:text-5xl" : "mt-4 text-[2.5rem] sm:text-6xl"}`} style={{ animationDelay: "60ms" }}>
               {title}
             </h1>
             {intro && (
-              <p className="rise mt-5 max-w-xl text-lg text-fog" style={{ animationDelay: "120ms" }}>
+              <p className={`rise text-lg text-fog ${first ? "mt-3 max-w-3xl" : "mt-5 max-w-xl"} ${wide ? "hidden sm:block" : ""}`} style={{ animationDelay: "120ms" }}>
                 {intro}
               </p>
             )}
-            <div className="mt-10">{children}</div>
+            <div className={first ? "mt-7" : wide ? "mt-6 sm:mt-10" : "mt-10"}>{children}</div>
           </div>
 
           {showAside && (
@@ -104,6 +106,12 @@ export function StepShell({
             </aside>
           )}
         </div>
+        <p className="mx-auto max-w-7xl px-5 pb-10 text-xs text-ash sm:px-8">
+          Vehicle photographs are illustrative and come from Wikimedia Commons contributors.{" "}
+          <Link href="/credits" className="underline underline-offset-4 hover:text-bright">
+            Photo credits
+          </Link>
+        </p>
       </main>
 
       {(prev || (next && canContinue)) && (

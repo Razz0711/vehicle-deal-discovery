@@ -27,7 +27,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Raw
               <Link
                 href={hrefFor("/brand", change(sel, "condition", o.id))}
                 aria-current={active ? "true" : undefined}
-                className={`group relative flex min-h-[380px] flex-col overflow-hidden rounded-[28px] transition-shadow duration-500 ${
+                className={`group relative flex min-h-[300px] flex-col [@media(min-height:900px)]:min-h-[380px] overflow-hidden rounded-[28px] transition-shadow duration-500 ${
                   active ? "is-selected" : "surface hover:shadow-[0_0_0_1px_rgb(242_118_50/0.5),0_30px_60px_-30px_rgb(242_118_50/0.45)]"
                 }`}
               >
@@ -36,6 +36,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Raw
                     kind={vehicleKind(sel)}
                     sizes="(min-width: 640px) 420px, 100vw"
                     showNote={i === 0}
+                    decorative
                     className={`transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-[1.06] ${o.id === "used" ? "saturate-[0.65]" : ""}`}
                   />
                 </span>

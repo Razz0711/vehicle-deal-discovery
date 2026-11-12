@@ -1,18 +1,16 @@
 import generated from "./photos.generated.json";
+import { REMOTE_PHOTOS, commonsThumb, type RemotePhoto } from "./remotePhotos";
 
 /**
  * VEHICLE PHOTOGRAPHS
  *
- * Every vehicle on screen is a photograph from /public/vehicles. There are no
- * illustrations, renders or generated vehicle images in the codebase.
+ * Every vehicle on screen is a real photograph. There are no illustrations,
+ * renders or generated vehicle images in the codebase. Sources, in order:
  *
- * To add one, drop a licensed photograph into /public/vehicles with the file
- * name below (or models/<brand-id>/<model-id>.jpg) and restart the dev
- * server; `scripts/scan-photos.mjs` registers it. Put alt text and any
- * required credit in /public/vehicles/credits.json.
- *
- * Until a photograph exists, its slot shows a neutral lit frame, never an
- * artificial vehicle.
+ * 1. Your own files in /public/vehicles (registered by scripts/scan-photos.mjs;
+ *    see the README in that folder). Model-specific files win over type files.
+ * 2. Licensed photographs from Wikimedia Commons (data/remotePhotos.ts).
+ * 3. Nothing: the slot shows an empty lit frame, never an artificial vehicle.
  */
 
 export type PhotoKind = "car" | "bike" | "scooter" | "ev" | "ev-scooter" | "truck";
@@ -23,6 +21,8 @@ export type VehiclePhoto = {
   credit?: string;
   /** CSS object-position, to keep the vehicle in frame when cropped. */
   focus?: string;
+  /** Set when the photograph is loaded from Wikimedia Commons. */
+  remote?: RemotePhoto;
 };
 
 export const PHOTO_SLOTS: Record<PhotoKind, { file: string; shows: string }> = {
@@ -40,5 +40,13 @@ const MODELS = generated.models as Record<string, VehiclePhoto>;
 export function findPhoto(kind: PhotoKind, modelKey?: string): { photo?: VehiclePhoto; exact: boolean } {
   const exact = modelKey ? MODELS[modelKey] : undefined;
   if (exact) return { photo: exact, exact: true };
-  return { photo: KINDS[kind], exact: false };
+  if (KINDS[kind]) return { photo: KINDS[kind], exact: false };
+  const remote = REMOTE_PHOTOS[kind];
+  if (remote) {
+    return {
+      photo: { src: commonsThumb(remote, 1280), alt: remote.alt, credit: remote.author, focus: remote.focus ?? "50% 58%", remote },
+      exact: false,
+    };
+  }
+  return { photo: undefined, exact: false };
 }

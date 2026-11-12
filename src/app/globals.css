@@ -118,7 +118,7 @@ body {
 
 /* ---------- Content entrance ---------- */
 @keyframes rise {
-  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  from { opacity: 0.35; transform: translate3d(0, 18px, 0); }
   to { opacity: 1; transform: none; }
 }
 .rise { animation: rise 0.7s var(--ease-out-soft) both; }

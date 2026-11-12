@@ -141,9 +141,12 @@ function Particles({ disabled }: { disabled: boolean }) {
 
     let raf = 0;
     let last = performance.now();
+    // ~30 frames a second is plenty for slow-drifting dots and halves the work.
     const loop = (now: number) => {
-      draw(Math.min(now - last, 50));
-      last = now;
+      if (now - last >= 32) {
+        draw(Math.min(now - last, 66));
+        last = now;
+      }
       raf = requestAnimationFrame(loop);
     };
     const onVisibility = () => {
