@@ -36,3 +36,9 @@ test("env files: only the template may be tracked", () => {
   for (const f of [".env", ".env.local", ".env.production", "apps/x/.env.staging"]) assert.equal(isForbiddenEnvFile(f), true, f);
   assert.equal(isForbiddenEnvFile("src/lib/env.ts"), false);
 });
+
+test("flags a committed limiter token", () => {
+  const line = ["OTP_LIMITER", "TOKEN=abcdef0123456789abcdef0123456789"].join("_");
+  assert.equal(findSecrets(line)[0]?.rule, "otp-limiter-token");
+  assert.equal(findSecrets("OTP_LIMITER_TOKEN=").length, 0);
+});

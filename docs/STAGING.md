@@ -44,19 +44,46 @@ The automation available to Claude cannot change Auth settings, so these are app
    - Email: disabled for now (staff email sign-in comes later).
    - Anonymous sign-ins: **off**.
    - Allow new users to sign up: on.
-2. **Phone test numbers** (Phone provider settings, "Test phone numbers and OTPs"). Numbers without the `+`:
-   - `919000000001` → a 6-digit code of your choice
-   - `919000000002` → a 6-digit code of your choice
-   Share the codes privately with the team. Do not commit them. Until an SMS provider (Twilio/MSG91) is connected, only these numbers can sign in.
+2. **Phone provider and test numbers** (Phone provider settings).
+   - Supabase requires an SMS provider to be configured **even for test numbers**. Until a DLT-registered provider is chosen, select Twilio with placeholder values. Nothing is sent to test numbers.
+   - "Test phone numbers and OTPs", numbers without the `+`:
+     - `919000000001` → a 6-digit code of your choice
+     - `919000000002` → a 6-digit code of your choice
+   - "Test OTPs valid until": a date no later than the end of Phase 11.
+   - Share the codes privately with the team. Do not commit them. Until a real provider is connected, only these numbers can sign in.
 3. **CAPTCHA** (Authentication › Attack Protection): enable, provider **Cloudflare Turnstile**.
    - In Cloudflare, create a Turnstile widget with hostnames `localhost` and your Vercel preview domain.
    - Paste the **secret** into Supabase. Put the **site key** in `.env.local` and Vercel Preview as `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
-4. **Rate limits** (Authentication › Rate Limits): SMS sent per hour **30**; token verifications **30** per 5 minutes per IP; sign-ups/sign-ins **30** per 5 minutes per IP. The stricter product limits (5 codes per number per day, 20 per IP per hour) are enforced by the app in Phase 3.
+4. **Rate limits** (Authentication › Rate Limits): SMS sent per hour **30**; token verifications **30** per 5 minutes per IP; sign-ups/sign-ins **30** per 5 minutes per IP. The stricter product limits (5 codes per number per day, 20 per IP per hour) are enforced by the app through `private.rate_limits`.
+4a. **OTP limiter token** (Phase 3; decision D3-1). Generate one value and store it in three places, never in Git:
+   ```bash
+   openssl rand -hex 32
+   ```
+   - Supabase SQL editor (staging), with your value in place of the placeholder:
+     `select vault.create_secret('<the value>', 'otp_limiter_token');`
+   - Vercel → Project → Settings → Environment Variables → **Preview** only: `OTP_LIMITER_TOKEN` = the value. Not exposed to the browser: no `NEXT_PUBLIC_` prefix.
+   - Your `.env.local`: `OTP_LIMITER_TOKEN=<the value>`.
+   Until this is done, code requests show "temporarily unavailable" (fail closed). To rotate: `select vault.update_secret((select id from vault.secrets where name = 'otp_limiter_token'), '<new value>');`, then update Vercel.
 5. **Sessions:** refresh token rotation **on**, reuse interval 10 s.
 6. **Multi-factor:** TOTP (authenticator app) **enabled**. Required for staff (`aal2`).
 7. **URL configuration:** Site URL `http://localhost:3000`. Redirect URLs: `http://localhost:3000/**` and `https://*-<your-vercel-team>.vercel.app/**`.
 8. **Data API** (Project Settings › Data API): exposed schemas **`public` only**. "Automatically expose new tables" **off** (if shown).
 9. **Database password:** saved in your password manager. Never in the repository.
+
+## Database (Phase 3)
+
+Applied to staging (`supabase/migrations/`):
+
+| Version | Name | Contents |
+|---|---|---|
+| 20261112192327 | baseline_privileges | default-privilege revokes, `private` schema |
+| 20261112192332 | identity_consent | `profiles`, `legal_documents`, `consent_events` |
+| 20261112192335 | rate_limits | `private.rate_limits`, limiter functions |
+| 20261112192339 | auth_functions | `is_registered_buyer()`, `complete_onboarding()` |
+
+- Staging data: `legal_documents` has version `2026-11-13-preview-draft` of the privacy notice and terms (`supabase/seed.sql`; `npm run legal:hashes`).
+- A change to `src/app/privacy/page.tsx` or `src/app/terms/page.tsx` needs a new version row.
+- Users with consent history cannot be deleted (decision D3-5). Reuse the two test numbers.
 
 ## CLI
 
@@ -78,12 +105,18 @@ npm run supabase -- start      # Postgres, Auth, Studio on 127.0.0.1
 npm run supabase -- status     # prints local URL and publishable key
 ```
 
+For local phone sign-in, export `SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN=local-placeholder` before `supabase start`. The local Twilio entry is a placeholder; local test numbers never send SMS. Then create the local limiter token: `select vault.create_secret('<64 hex>', 'otp_limiter_token');`, and set the same value in `.env.local`.
+
 The local stack uses the fixed test numbers in `config.toml` (`[auth.sms.test_otp]`), with CAPTCHA off.
 
 ## Checks
 
 ```bash
 npm test               # unit tests (Node test runner)
+npm run test:db -- postgres://postgres@127.0.0.1:54322/postgres   # migrations + 81 security cases on a fresh local database
+npm run test:db:concurrency -- <same url>                          # limiter under real parallel connections
+npm run test:http -- http://localhost:3000                         # protected routes, redirects, forged cookies (against npm start)
+npm run test:e2e:staging                                           # live sign-in on staging (settings in the script header)
 npm run typecheck
 npm run lint
 npm run check:secrets  # Git-tracked and staged files, plus .next/static if built

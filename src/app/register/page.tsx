@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Lock, MapPin, UserCheck } from "lucide-react";
 import { RegisterFlow } from "@/components/account/RegisterFlow";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
+import { safeNext } from "@/lib/auth/redirect";
+import { readSession } from "@/lib/auth/session";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Get started", description: `Create a ${SITE.name} account to keep your location and preferences across visits.` };
@@ -13,7 +16,12 @@ const POINTS = [
   { Icon: Lock, title: "Shared only when you ask", text: "A seller sees your details only if you send that seller an enquiry." },
 ];
 
-export default function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
+  const raw = (await searchParams).next;
+  const next = safeNext(Array.isArray(raw) ? raw[0] : raw, "") || undefined;
+  const { state } = await readSession();
+  if (state.configured && state.user && !state.user.anonymous) redirect(state.profile?.onboarded ? safeNext(next) : next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding");
+
   return (
     <>
       <SiteNav />
@@ -36,7 +44,7 @@ export default function RegisterPage() {
             ))}
           </ul>
         </div>
-        <RegisterFlow />
+        <RegisterFlow next={next} />
       </main>
       <SiteFooter />
     </>

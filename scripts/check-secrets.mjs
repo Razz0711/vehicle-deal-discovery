@@ -20,6 +20,19 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const JWT = /eyJ[A-Za-z0-9_-]{8,}\.(eyJ[A-Za-z0-9_-]{8,})\.[A-Za-z0-9_-]{8,}/g;
 
+/** Server-only values configured on this machine (never committed). Their presence anywhere scanned is a leak. */
+const EXTRA_VALUES = (() => {
+  const vals = [process.env.OTP_LIMITER_TOKEN];
+  try {
+    const local = readFileSync(join(ROOT, ".env.local"), "utf8");
+    const m = /^OTP_LIMITER_TOKEN=(.+)$/m.exec(local);
+    if (m) vals.push(m[1].trim());
+  } catch {
+    /* no .env.local */
+  }
+  return vals.filter((v) => typeof v === "string" && v.length >= 32);
+})();
+
 /** @returns {{ rule: string, match: string }[]} */
 export function findSecrets(text) {
   const hits = [];
@@ -33,6 +46,8 @@ export function findSecrets(text) {
     }
   }
   for (const m of text.matchAll(/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g)) hits.push({ rule: "private-key", match: m[0] });
+  for (const m of text.matchAll(/OTP_LIMITER_TOKEN\s*=\s*["']?([A-Za-z0-9_-]{16,})/g)) hits.push({ rule: "otp-limiter-token", match: m[1] });
+  for (const extra of EXTRA_VALUES) if (extra && text.includes(extra)) hits.push({ rule: "configured-server-secret", match: extra });
   for (const m of text.matchAll(/postgres(?:ql)?:\/\/[^:\s/"'`]+:([^@\s"'`]+)@/g)) {
     // Allow obvious placeholders such as [YOUR-PASSWORD] or ${PASSWORD} and the local stack default.
     if (!/^(\[.*\]|\$\{.*\}|<.*>|postgres)$/.test(m[1])) hits.push({ rule: "database-url-with-password", match: m[0] });

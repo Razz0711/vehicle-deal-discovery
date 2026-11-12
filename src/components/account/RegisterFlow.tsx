@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, Check, Info, ShieldAlert } from "lucide-react";
 import { REGIONS } from "@/data/locations";
-import { AUTH, AUTH_MESSAGES, isEmail, normaliseMobile, requestOtp, saveProfile, verifyOtp, type AuthFailure } from "@/lib/auth";
+import { AUTH, AUTH_MESSAGES, isEmail, normaliseMobile, type AuthFailure } from "@/lib/auth";
+import { completeOnboarding, requestOtp, savePreferences, verifyOtp } from "@/lib/auth-actions";
+import { Turnstile, TURNSTILE_SITE_KEY, type TurnstileHandle } from "./Turnstile";
 import { hrefFor } from "@/lib/selection";
 import { slug } from "@/lib/slug";
 
 type Stage = "details" | "code" | "blocked" | "prefs";
-type Fields = { name: string; mobile: string; email: string; state: string; city: string; consent: boolean };
+type Fields = { name: string; mobile: string; email: string; state: string; city: string; consent: boolean; adult: boolean };
 type Errors = Partial<Record<keyof Fields | "code" | "form", string>>;
 
 const SORTED = [...REGIONS].sort((a, b) => a.name.localeCompare(b.name));
@@ -38,10 +40,15 @@ function Field({ id, label, why, error, children }: { id: string; label: string;
   );
 }
 
-export function RegisterFlow() {
+export function RegisterFlow({ next }: { next?: string }) {
   const router = useRouter();
+  const captcha = useRef<TurnstileHandle>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // Set once the code is verified, so a later fix (e.g. a taken email) does not need a new code.
+  const [verified, setVerified] = useState(false);
+  const [notice, setNotice] = useState("");
   const [stage, setStage] = useState<Stage>("details");
-  const [f, setF] = useState<Fields>({ name: "", mobile: "", email: "", state: "", city: "", consent: false });
+  const [f, setF] = useState<Fields>({ name: "", mobile: "", email: "", state: "", city: "", consent: false, adult: false });
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const [code, setCode] = useState("");
@@ -62,41 +69,70 @@ export function RegisterFlow() {
     if (!isEmail(f.email)) found.email = "Enter a valid email address, like name@example.com.";
     if (!f.state) found.state = "Choose your state.";
     if (!f.city) found.city = "Choose your city.";
+    if (!f.adult) found.adult = "You must be 18 or older to create an account.";
     if (!f.consent) found.consent = "Tick the box to agree before continuing.";
     setErrors(found);
     if (Object.keys(found).length) {
       document.getElementById("reg-" + Object.keys(found)[0])?.focus();
       return;
     }
+    if (!AUTH.configured) return setStage("blocked");
+    if (verified) return onboard(); // already verified: only the profile needs saving
+    if (TURNSTILE_SITE_KEY && !captchaToken) return setErrors({ form: "Complete the security check first." });
     setBusy(true);
-    const res = await requestOtp(mobile!, "register");
+    const res = await requestOtp(mobile!, captchaToken ?? undefined);
     setBusy(false);
-    if (res.ok) setStage("code");
-    else if (res.reason === "not-configured") setStage("blocked");
+    captcha.current?.reset(); // tokens are single-use
+    if (res.ok) {
+      setCode("");
+      setStage("code");
+    } else if (res.reason === "not-configured") setStage("blocked");
     else fail(res.reason);
+  }
+
+  async function onboard() {
+    setBusy(true);
+    const res = await completeOnboarding({ name: f.name, email: f.email, state: f.state, city: f.city, adult: f.adult, consent: f.consent }, "register");
+    setBusy(false);
+    if (res.ok) {
+      setErrors({});
+      return setStage("prefs");
+    }
+    if (res.reason === "already-registered") {
+      router.replace(next ?? "/explore");
+      return router.refresh();
+    }
+    setStage("details");
+    setErrors({ ...(res.fields ?? {}), form: AUTH_MESSAGES[res.reason] });
   }
 
   async function submitCode(e: React.FormEvent) {
     e.preventDefault();
     if (!/^\d{6}$/.test(code)) return setErrors({ code: "Enter the 6-digit code from the message." });
     setBusy(true);
-    const res = await verifyOtp(normaliseMobile(f.mobile)!, code);
+    const res = await verifyOtp(normaliseMobile(f.mobile)!, code, next);
     setBusy(false);
-    if (res.ok) {
-      setErrors({});
-      setStage("prefs");
-    } else setErrors({ code: AUTH_MESSAGES[res.reason] });
+    if (!res.ok) return setErrors({ code: AUTH_MESSAGES[res.reason] });
+    setVerified(true);
+    if (res.onboarded) {
+      // The number already had an account: the person is now signed in to it.
+      setNotice(AUTH_MESSAGES["already-registered"]);
+      router.replace(res.redirectTo);
+      return router.refresh();
+    }
+    await onboard();
   }
 
   async function finish(withPrefs: boolean) {
     const chosen = withPrefs && condition ? condition : undefined;
-    if (!guest && AUTH.configured) {
+    if (!guest && AUTH.configured && chosen) {
       setBusy(true);
-      const res = await saveProfile({ role: "buyer", name: f.name.trim(), mobile: normaliseMobile(f.mobile)!, email: f.email.trim(), state: f.state, city: f.city, condition: chosen });
+      const res = await savePreferences(chosen);
       setBusy(false);
       if (!res.ok) return fail(res.reason);
     }
-    router.push(hrefFor("/explore", withPrefs ? { state: f.state || undefined, city: f.city ? slug(f.city) : undefined, condition: chosen } : {}));
+    router.push(next ?? hrefFor("/explore", withPrefs ? { state: f.state || undefined, city: f.city ? slug(f.city) : undefined, condition: chosen } : {}));
+    router.refresh();
   }
 
   return (
@@ -165,6 +201,17 @@ export function RegisterFlow() {
               </div>
               <div>
                 <label className="flex cursor-pointer items-start gap-3 text-sm text-fog">
+                  <input id="reg-adult" type="checkbox" checked={f.adult} onChange={(e) => set("adult", e.target.checked)} aria-invalid={!!errors.adult} className="mt-0.5 h-5 w-5 flex-none accent-ember" />
+                  <span>I am 18 years of age or older.</span>
+                </label>
+                {errors.adult && (
+                  <p role="alert" className="mt-1.5 text-sm text-danger">
+                    {errors.adult}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="flex cursor-pointer items-start gap-3 text-sm text-fog">
                   <input id="reg-consent" type="checkbox" checked={f.consent} onChange={(e) => set("consent", e.target.checked)} aria-invalid={!!errors.consent} className="mt-0.5 h-5 w-5 flex-none accent-ember" />
                   <span>
                     I agree to the{" "}
@@ -184,18 +231,20 @@ export function RegisterFlow() {
                   </p>
                 )}
               </div>
+              {!verified && <Turnstile ref={captcha} onToken={setCaptchaToken} />}
               {errors.form && (
                 <p role="alert" className="rounded-xl bg-danger/10 p-3 text-sm text-danger">
-                  {errors.form} {errors.form === AUTH_MESSAGES["already-registered"] && <Link href="/signin" className="underline">Go to sign in</Link>}
+                  {errors.form}
                 </p>
               )}
+              {notice && <p className="rounded-xl bg-ember-soft p-3 text-sm ring-1 ring-ember/30">{notice}</p>}
               <button type="submit" disabled={busy} className="group flex min-h-13 items-center justify-center gap-2 rounded-full bg-ember py-3.5 font-semibold text-void transition hover:bg-[#ff8a4a] active:scale-[0.99] disabled:opacity-60">
-                {busy ? "Checking…" : "Continue to verification"}
+                {busy ? "Checking…" : verified ? "Save and continue" : "Continue to verification"}
                 {!busy && <ArrowRight size={18} aria-hidden className="transition-transform group-hover:translate-x-1" />}
               </button>
               <p className="text-center text-sm text-fog">
                 Already registered?{" "}
-                <Link href="/signin" className="text-ember underline-offset-4 hover:underline">
+                <Link href={next ? `/signin?next=${encodeURIComponent(next)}` : "/signin"} className="text-ember underline-offset-4 hover:underline">
                   Sign in
                 </Link>
               </p>

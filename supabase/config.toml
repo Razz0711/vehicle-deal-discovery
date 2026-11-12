@@ -295,10 +295,12 @@ max_frequency = "60s"
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+# Supabase Auth needs an SMS provider configured even for test numbers. LOCAL STACK ONLY:
+# placeholder values, not credentials; nothing is sent to the fictional test numbers above.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
+enabled = true
+account_sid = "local-placeholder"
+message_service_sid = "local-placeholder"
 # DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
 auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 
