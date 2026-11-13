@@ -134,3 +134,19 @@ The architecture requires `is_adult_declared`, and the existing form lacked it. 
 - The phone UI, phone server actions and the Turnstile widget are removed from the app; they are in commit `241edbf`. The pure phone logic in `src/lib/auth/core.ts` stays, with its tests, for when phone returns. `private.rate_limits` and the limiter functions stay in the database unused.
 
 **Founder setup:** a Google Cloud OAuth client and the Google provider in Supabase (`docs/STAGING.md`, Google section).
+
+## D3-14. Profile email follows the verified sign-in address (found in live testing, 13 Nov 2026)
+
+**Found:**
+- With Google sign-in (commit `36f072e`), a signed-in user could edit `profiles.email`.
+- The trigger then cleared `email_verified_at`, and the user had no way to restore it, even by changing back to their Google address.
+- The live test on the preview reproduced this on the founder's staging account.
+
+**Fix (migration `profile_email_from_auth`):**
+- Users can no longer update `profiles.email`. It is filled at onboarding from the confirmed Supabase Auth address, lower-cased, and a different address is refused.
+- Phone-only accounts (a future option) may still give an optional contact address, stored unverified.
+- The trigger now clears verification only when the address changes without a matching verification update.
+- A one-time correction resets existing profiles with a confirmed sign-in email to that address and its confirmation time. Phone-only profiles are untouched.
+- The finish-your-account form shows the Google address read-only.
+
+**Not covered:** if a person later changes the email on their Google account, the profile keeps the old address until a sync is added (planned with account settings).

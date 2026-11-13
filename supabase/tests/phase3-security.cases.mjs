@@ -89,11 +89,13 @@ export const CASES = [
 
   // --- Google sign-in (D3-13) ---
   { name: "Google user: onboarding with a malformed mobile is refused", as: "G1", sql: onboard("true", P, "Gita One", USERS.G1.email, "'12345'"), expect: "error:23514" },
+  { name: "Google user: a different email from the Google address is refused", as: "G1", sql: onboard("true", P, "Gita One", "someone.else@example.com", "'9876543210'"), expect: "error:22023" },
   { name: "Google user: onboarding with own Google email succeeds", as: "G1", sql: onboard("true", P, "Gita One", USERS.G1.email, "'9876543210'"), expect: "true" },
   { name: "Google user: matching email is marked verified, mobile stored", as: "G1", sql: "select (email_verified_at is not null and mobile = '9876543210')::text from public.profiles", expect: "true" },
   { name: "Google user: empty email defaults to the Google address", as: "G2", sql: onboard("true", P, "Gita Two", ""), expect: "true" },
   { name: "Google user: defaulted address is the sign-in address and verified", as: "G2", sql: "select (email = '" + USERS.G2.email + "' and email_verified_at is not null and mobile is null)::text from public.profiles", expect: "true" },
-  { name: "Google user: changing email later clears verification", as: "G2", sql: `with u as (update public.profiles set email = 'other@example.com' where id = '${USERS.G2.id}' returning email_verified_at) select (email_verified_at is null)::text from u`, expect: "true" },
+  { name: "Google user: cannot change their profile email later", as: "G2", sql: `update public.profiles set email = 'other@example.com' where id = '${USERS.G2.id}'`, expect: "error:42501" },
+  { name: "Google user: verification is the Google confirmation, still set", as: "G2", sql: "select (email_verified_at is not null)::text from public.profiles", expect: "true" },
   { name: "Google user: can add an unverified mobile later", as: "G2", sql: `with u as (update public.profiles set mobile = '9123456780' where id = '${USERS.G2.id}' returning mobile) select mobile from u`, expect: "9123456780" },
   { name: "Google user: malformed mobile update refused", as: "G2", sql: `update public.profiles set mobile = '+91 91234' where id = '${USERS.G2.id}'`, expect: "error:23514" },
   { name: "Google user: is a registered buyer", as: "G1", sql: "select private.is_registered_buyer()::text", expect: "true" },
@@ -112,7 +114,7 @@ export const CASES = [
   { name: "A cannot change their profile id", as: "A", sql: `update public.profiles set id = '${USERS.B.id}' where id = '${USERS.A.id}'`, expect: "error:42501" },
   { name: "A cannot delete their profile", as: "A", sql: `delete from public.profiles where id = '${USERS.A.id}'`, expect: "error:42501" },
   { name: "setup: mark A's email verified (as owner)", as: "postgres", sql: `with u as (update public.profiles set email_verified_at = now() where id = '${USERS.A.id}' returning 1) select count(*)::text from u`, expect: "1" },
-  { name: "A changing email clears email_verified_at", as: "A", sql: `with u as (update public.profiles set email = 'asha.new@example.com' where id = '${USERS.A.id}' returning email_verified_at) select (email_verified_at is null)::text from u`, expect: "true" },
+  { name: "A cannot change their profile email", as: "A", sql: `update public.profiles set email = 'asha.new@example.com' where id = '${USERS.A.id}'`, expect: "error:42501" },
 
   // --- consent ledger ---
   { name: "A sees only their own consent events", as: "A", sql: `select count(*)::text from public.consent_events where user_id <> '${USERS.A.id}'`, expect: "0" },
@@ -158,7 +160,7 @@ export const CASES = [
   { name: "anon can execute only the two limiter functions in public", as: "postgres", sql: "select coalesce(string_agg(p.proname, ',' order by p.proname), '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')", expect: "consume_otp_quota,refund_otp_quota" },
   { name: "API roles have no privileges on private tables", as: "postgres", sql: "select count(*)::text from pg_class c join pg_namespace n on n.oid = c.relnamespace, unnest(array['anon','authenticated','service_role']) r where n.nspname = 'private' and c.relkind = 'r' and (has_table_privilege(r, c.oid, 'select') or has_table_privilege(r, c.oid, 'insert') or has_table_privilege(r, c.oid, 'update') or has_table_privilege(r, c.oid, 'delete'))", expect: "0" },
   { name: "private security definer functions pin search_path", as: "postgres", sql: "select count(*)::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'private' and p.prosecdef and not coalesce(p.proconfig @> array['search_path=\"\"'], false)", expect: "0" },
-  { name: "authenticated may update only the six named profile columns", as: "postgres", sql: "select string_agg(attname, ',' order by attname) from pg_attribute where attrelid = 'public.profiles'::regclass and attnum > 0 and not attisdropped and has_column_privilege('authenticated', attrelid, attnum, 'update')", expect: "city_name,condition_pref,email,full_name,mobile,state_code" },
+  { name: "authenticated may update only the five named profile columns", as: "postgres", sql: "select string_agg(attname, ',' order by attname) from pg_attribute where attrelid = 'public.profiles'::regclass and attnum > 0 and not attisdropped and has_column_privilege('authenticated', attrelid, attnum, 'update')", expect: "city_name,condition_pref,full_name,mobile,state_code" },
   { name: "no API role has delete on any Phase 3 table", as: "postgres", sql: "select count(*)::text from unnest(array['public.profiles','public.legal_documents','public.consent_events']) t, unnest(array['anon','authenticated','service_role']) r where has_table_privilege(r, t::regclass, 'delete')", expect: "0" },
 ];
 

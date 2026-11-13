@@ -46,9 +46,15 @@ export function OnboardingForm({ next, defaults }: { next?: string; defaults: { 
       </label>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         Email address
-        <input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} autoComplete="email" aria-invalid={!!errors.email} className={field} />
+        {defaults.email ? (
+          <>
+            <input type="email" value={defaults.email} readOnly aria-readonly="true" className={field + " cursor-default opacity-80"} />
+            <span className="text-xs font-normal text-ash">From your Google account. It stays in step with the account you sign in with.</span>
+          </>
+        ) : (
+          <input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} autoComplete="email" aria-invalid={!!errors.email} className={field} />
+        )}
         {err("email")}
-        {defaults.email && f.email.trim().toLowerCase() !== defaults.email.toLowerCase() && <span className="text-xs font-normal text-ash">A different address from your Google account is saved as unverified.</span>}
       </label>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         Mobile number <span className="font-normal text-ash">(optional)</span>
